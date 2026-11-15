@@ -1,261 +1,844 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>언덕 위 천문대 — 360° 실시간 밤하늘 가상공간</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      overflow: hidden; background: #03050a;
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: #f1f5f9; user-select: none;
-    }
-    canvas { display: block; cursor: grab; }
-    canvas:active { cursor: grabbing; }
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>셈셈 수학 놀이터</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700&display=swap">
+<style>
+/* Layout concept: 모눈 연습장 위에 스티커처럼 붙은 두꺼운 외곽선 카드. 홈(학년·단원) → 풀이(키패드) → 결과 */
+:root{
+  --paper:#F2F8FF; --grid:#D9E8F8; --card:#FFFFFF;
+  --ink:#1B2744; --soft:#566685; --edge:#1B2744; --shadow:#1B2744;
+  --sun:#FFC93C; --mint:#37C9A0; --sky:#52A8FF; --coral:#FF6F61;
+  --sun-t:#FFF1C2; --mint-t:#D3F5E9; --sky-t:#D6EAFF; --coral-t:#FFDAD6;
+  --op:#E0463A; --ok:#12805A; --bad:#C23A30; --on:#1B2744;
+  --font-d:'Jua','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --font-b:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111A2E; --grid:#1A2640; --card:#1B2742;
+    --ink:#EAF0FF; --soft:#A3B3D6; --edge:#8EA5D9; --shadow:#060B16;
+    --sun-t:#4A3F17; --mint-t:#16443A; --sky-t:#173A63; --coral-t:#4F2523;
+    --op:#FF8A80; --ok:#4BDBA6; --bad:#FF8A80; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111A2E; --grid:#1A2640; --card:#1B2742;
+  --ink:#EAF0FF; --soft:#A3B3D6; --edge:#8EA5D9; --shadow:#060B16;
+  --sun-t:#4A3F17; --mint-t:#16443A; --sky-t:#173A63; --coral-t:#4F2523;
+  --op:#FF8A80; --ok:#4BDBA6; --bad:#FF8A80; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; color:var(--ink); font-family:var(--font-b); font-size:16px; line-height:1.5;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:26px 26px;
+}
+button{font-family:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid var(--sky); outline-offset:3px}
+.wrap{
+  max-width:720px; margin:0 auto; padding-block:18px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.screen{animation:in .25s ease-out}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-    /* 좌측 상단 컨트롤 HUD */
-    #hud {
-      position: fixed; top: 16px; left: 16px; z-index: 10;
-      background: rgba(10, 15, 28, 0.75); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 14px;
-      padding: 16px 18px; width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    }
-    #hud h1 { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; color: #7dd3fc; letter-spacing: -0.02em; }
-    #hud p.sub { font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px; }
-    .control-group { margin-bottom: 14px; }
-    .control-group label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px; color: #cbd5e1; }
-    input[type="range"] { width: 100%; accent-color: #38bdf8; cursor: pointer; }
-    .btn-row { display: flex; gap: 8px; }
-    button {
-      flex: 1; padding: 8px 10px; font-size: 0.8rem; font-weight: 600;
-      border-radius: 8px; border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(30, 41, 59, 0.85); color: #f8fafc; cursor: pointer;
-      transition: all 0.2s;
-    }
-    button:hover { background: rgba(56, 189, 248, 0.25); }
-    button.active { background: #0284c7; border-color: #38bdf8; }
+/* mascot */
+.mascot{width:72px;height:72px;flex:none;overflow:visible}
+.mascot .m-line{stroke:var(--edge);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+.mascot .m-body{fill:var(--sky)}
+.mascot .m-ball{fill:var(--sun)}
+.mascot .m-cheek{fill:var(--coral);opacity:.75}
+.mascot .m-eye{fill:var(--on)}
+.mascot .m-mouth{fill:none;stroke:var(--on);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+.mascot .m-open{fill:var(--coral)}
+.mascot .happy-only,.mascot .sad-only{display:none}
+.mascot.happy .happy-only{display:inline}
+.mascot.happy .calm-only{display:none}
+.mascot.sad .sad-only{display:inline}
+.mascot.sad .calm-only{display:none}
+.mascot.happy{animation:hop .5s ease-out}
+@keyframes hop{0%{transform:translateY(0)}40%{transform:translateY(-12px)}100%{transform:translateY(0)}}
 
-    /* 우측 상단 오늘의 우주쇼 및 천체 카드 */
-    #event-card {
-      position: fixed; top: 16px; right: 16px; z-index: 10;
-      background: rgba(10, 15, 28, 0.75); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 14px;
-      padding: 16px 18px; width: 300px; font-size: 0.82rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    }
-    #event-card h2 { font-size: 0.92rem; color: #fbbf24; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-    #event-card ul { padding-left: 16px; color: #e2e8f0; line-height: 1.55; }
-    #event-card li { margin-bottom: 4px; }
-    .highlight-event {
-      margin-top: 10px; padding: 10px; border-radius: 8px;
-      background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3);
-      font-size: 0.78rem; color: #fde68a; line-height: 1.45;
-    }
+/* home */
+.head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.head h1{font:2.1rem/1.1 var(--font-d);margin:0;text-wrap:balance}
+.head p{margin:2px 0 0;color:var(--soft);font-size:.9rem}
+.total{margin-left:auto;flex:none;border:3px solid var(--edge);border-radius:999px;background:var(--sun);color:var(--on);
+  font:1.1rem/1 var(--font-d);padding:8px 14px;box-shadow:0 3px 0 var(--shadow);white-space:nowrap}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tab{border:3px solid var(--edge);border-radius:20px;background:var(--card);box-shadow:0 5px 0 var(--shadow);
+  padding:8px 4px 10px;display:flex;align-items:baseline;justify-content:center;gap:2px;transition:transform .08s,box-shadow .08s}
+.tab b{font:2.4rem/1 var(--font-d)}
+.tab span{font:1.05rem/1 var(--font-d)}
+.tab.on{transform:translateY(3px);box-shadow:0 2px 0 var(--shadow);color:var(--on)}
+.g1{--gc:var(--sun);--gt:var(--sun-t)}
+.g2{--gc:var(--mint);--gt:var(--mint-t)}
+.g3{--gc:var(--sky);--gt:var(--sky-t)}
+.tab.on{background:var(--gc)}
+.gdesc{margin:14px 2px 4px;color:var(--soft);font-size:.95rem}
+.nsel{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:12px 2px 0}
+.nsel>span{font:1rem/1 var(--font-d);margin-right:2px}
+.nbtn{border:3px solid var(--edge);border-radius:999px;background:var(--card);box-shadow:0 3px 0 var(--shadow);padding:5px 14px;font:1rem/1.3 var(--font-d);color:var(--ink)}
+.nbtn.on{background:var(--gc);color:var(--on);transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
+.bar{flex:1;height:16px;border:2.5px solid var(--edge);border-radius:9px;background:var(--card);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--mint);transition:width .3s}
+.gh{font:1.05rem/1 var(--font-d);letter-spacing:.06em;margin:22px 2px 10px;display:flex;align-items:center;gap:10px}
+.gh::after{content:"";flex:1;height:3px;border-radius:2px;background:var(--grid);background:repeating-linear-gradient(90deg,var(--edge) 0 6px,transparent 6px 12px);opacity:.35}
+.ugrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px}
+.ucard{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;text-align:left;
+  border:3px solid var(--edge);border-radius:20px;background:var(--card);box-shadow:0 5px 0 var(--shadow);padding:12px;
+  transition:transform .08s,box-shadow .08s}
+.ucard:active{transform:translateY(3px);box-shadow:0 2px 0 var(--shadow)}
+.badge{width:54px;height:54px;border:3px solid var(--edge);border-radius:50%;background:var(--gc);color:var(--on);
+  display:grid;place-items:center;font:1.7rem/1 var(--font-d)}
+.badge.sm{font-size:1.15rem}
+.uname{font:1.15rem/1.2 var(--font-d);display:block}
+.uex{display:block;color:var(--soft);font-size:.85rem}
+.ustars{display:block;margin-top:2px;letter-spacing:.1em;font-size:1rem;line-height:1}
+.ustars i{font-style:normal;color:var(--grid);-webkit-text-stroke:1px var(--edge)}
+.ustars i.on{color:var(--sun)}
+.note{margin:26px 2px 0;color:var(--soft);font-size:.85rem;text-align:center}
 
-    /* 마우스 호버 천체 툴팁 */
-    #tooltip {
-      position: fixed; pointer-events: none; z-index: 20;
-      background: rgba(8, 12, 24, 0.88); backdrop-filter: blur(8px);
-      border: 1px solid rgba(125, 211, 252, 0.45); border-radius: 10px;
-      padding: 8px 12px; font-size: 0.8rem; color: #f8fafc;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-      transform: translate(14px, 14px); display: none; min-width: 150px;
-    }
-    #tooltip .t-title { font-weight: 700; color: #38bdf8; font-size: 0.88rem; margin-bottom: 2px; }
-    #tooltip .t-sub { font-size: 0.74rem; color: #94a3b8; }
+/* play */
+.top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.quit{border:3px solid var(--edge);border-radius:14px;background:var(--card);box-shadow:0 3px 0 var(--shadow);padding:6px 12px;font:.95rem/1.2 var(--font-d);white-space:nowrap}
+.prog{flex:1;display:flex;gap:4px;min-width:0}
+.seg{flex:1;height:14px;border:2.5px solid var(--edge);border-radius:8px;background:var(--card)}
+.seg.ok{background:var(--mint)}
+.seg.mid{background:var(--sun)}
+.seg.bad{background:var(--coral)}
+.seg.now{background:var(--sky-t);box-shadow:0 0 0 3px var(--sky)}
+.count{font:1rem/1 var(--font-d);white-space:nowrap}
+.talk{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.bubble{position:relative;flex:1;min-width:0;border:3px solid var(--edge);border-radius:18px;background:var(--card);padding:10px 14px;
+  font:1.1rem/1.35 var(--font-d);box-shadow:0 4px 0 var(--shadow)}
+.bubble::before{content:"";position:absolute;left:-11px;top:50%;width:16px;height:16px;background:var(--card);
+  border-left:3px solid var(--edge);border-bottom:3px solid var(--edge);transform:translateY(-50%) rotate(45deg)}
+.stage{border:3px solid var(--edge);border-radius:24px;background:var(--card);box-shadow:0 6px 0 var(--shadow);
+  padding:22px 12px;text-align:center;min-height:190px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px}
+.expr{font:clamp(2rem,9.5vw,2.9rem)/1.5 var(--font-d);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:0 .2em}
+.expr .op{color:var(--op)}
+.slots{display:inline-flex;gap:6px;vertical-align:middle}
+.slot{width:1.45em;height:1.65em;border:3px dashed var(--edge);border-radius:12px;background:var(--card);color:var(--ink);
+  font:inherit;padding:0;display:inline-grid;place-items:center;line-height:1}
+.slot.active{border-style:solid;background:var(--sun-t);box-shadow:0 0 0 3px var(--sun)}
+.slot.ok{border-style:solid;background:var(--mint-t);box-shadow:none}
+.slot.reveal{border-style:solid;background:var(--sun-t);box-shadow:none}
+.slot.bad{border-style:solid;background:var(--coral-t);box-shadow:none;animation:shake .4s}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.objs{display:grid;grid-template-columns:repeat(5,minmax(0,2.5rem));gap:4px;justify-content:center;font-size:clamp(1.5rem,7vw,2rem);line-height:1.2}
+.pie{width:min(150px,44vw);height:auto}
+.pie path{stroke:var(--edge);stroke-width:3;stroke-linejoin:round}
+.pie .pf{fill:var(--coral)} .pie .pe{fill:var(--card)}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.15;margin:0 .15em}
+.frac>span:first-child{border-bottom:4px solid currentColor;padding:0 .2em .08em;min-width:1em;display:flex;justify-content:center}
+.frac>span:last-child{padding-top:.08em}
+.frac .slot{font-size:.8em}
+.vgrid{--cw:clamp(2.7rem,12vw,3.6rem);display:grid;grid-template-columns:repeat(calc(var(--n) + 1),var(--cw));gap:6px;justify-content:center;font:calc(var(--cw)*.78)/1 var(--font-d)}
+.vc{height:var(--cw);display:flex;align-items:center;justify-content:center}
+.vc.op{color:var(--op)}
+.vline{grid-column:1/-1;height:5px;border-radius:3px;background:var(--ink);margin:2px 0}
+.vgrid .slot{width:100%;height:var(--cw);font-size:inherit}
+.cmp{display:flex;align-items:center;justify-content:center;gap:14px;font:clamp(2.2rem,11vw,3.4rem)/1.2 var(--font-d)}
+.cmp .mid{width:1.3em;height:1.3em;border:3px dashed var(--edge);border-radius:50%;display:grid;place-items:center;color:var(--soft)}
+.cmp .mid.done{border-style:solid;background:var(--mint-t);color:var(--ink)}
+.mq{font:700 1.2rem/1.65 var(--font-b);max-width:30em;text-wrap:pretty}
+.seq{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font:clamp(1.7rem,8vw,2.4rem)/1.2 var(--font-d)}
+.seq span{min-width:1.7em;padding:2px 6px;border:3px solid var(--edge);border-radius:12px;background:var(--paper)}
+.seq .q{border-style:dashed;background:var(--sun-t);color:var(--op)}
+.eq{font:clamp(2rem,9vw,2.7rem)/1.3 var(--font-d);padding:6px 16px;border:3px dashed var(--edge);border-radius:16px;background:var(--paper)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;margin-top:18px}
+.opt{display:flex;align-items:center;gap:12px;border:3px solid var(--edge);border-radius:16px;background:var(--card);box-shadow:0 4px 0 var(--shadow);
+  padding:8px 14px;font:1.45rem/1.2 var(--font-d);color:var(--ink);text-align:left;min-height:54px}
+.opt b{flex:none;width:2.1rem;height:2.1rem;border:2.5px solid var(--edge);border-radius:50%;background:var(--sky-t);display:grid;place-items:center;font:1rem/1 var(--font-d)}
+.opt:active{transform:translateY(3px);box-shadow:0 1px 0 var(--shadow)}
+.opt.bad{background:var(--coral-t);opacity:.6}
+.opt.ok{background:var(--mint-t)}
+.opt:disabled,.choice:disabled{color:var(--ink)}
+.shp{width:min(140px,40vw);height:auto}
+.shp polygon,.shp rect,.shp circle{fill:var(--sky-t);stroke:var(--edge);stroke-width:4;stroke-linejoin:round}
+.fig{width:min(270px,78vw);height:auto}
+.fig rect,.fig circle{fill:var(--sky-t);stroke:var(--edge);stroke-width:4}
+.fig line{stroke:var(--op);stroke-width:4;stroke-linecap:round}
+.fig circle.dot{fill:var(--op);stroke:none}
+.fig text{font:700 16px var(--font-b);fill:var(--ink)}
+.shapes{display:grid;grid-template-columns:repeat(6,minmax(0,42px));gap:8px;justify-content:center}
+.mini{width:100%;height:auto}
+.mini *{stroke:var(--edge);stroke-width:2.5;stroke-linejoin:round}
+.mini .c{fill:var(--coral)}.mini .t{fill:var(--sun)}.mini .s{fill:var(--mint)}
+.balls{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;max-width:22em;padding:10px 14px 12px;border:3px dashed var(--edge);border-radius:22px;background:var(--paper);font-size:2rem;line-height:1.15}
+.balls small{flex:0 0 100%;font:700 .8rem/1.2 var(--font-b);color:var(--soft);margin-bottom:2px}
+.tbl{border-collapse:separate;border-spacing:6px;font:1.6rem/1 var(--font-d)}
+.tbl th{font:700 .95rem/1 var(--font-b);color:var(--soft);padding-right:6px}
+.tbl td{min-width:2.3em;padding:10px 6px;border:3px solid var(--edge);border-radius:12px;background:var(--paper)}
+.tbl td.q{border-style:dashed;background:var(--sun-t);color:var(--op)}
+.bars{display:flex;gap:12px;align-items:flex-end;justify-content:center;min-height:130px}
+.bar1{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;font:1.1rem/1 var(--font-d)}
+.bar1 i{display:block;width:34px;border:3px solid var(--edge);border-radius:8px 8px 0 0;background:var(--mint)}
+.hintbox{margin-top:12px;min-height:0}
+.hintbtn{border:3px solid var(--edge);border-radius:999px;background:var(--sky-t);box-shadow:0 3px 0 var(--shadow);padding:4px 16px;font:.95rem/1.5 var(--font-d)}
+.hinttext{margin:10px 0 0;border:3px dashed var(--edge);border-radius:16px;background:var(--sun-t);padding:10px 14px;text-align:left;font-size:.95rem}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:360px;margin:18px auto 0}
+.key{height:58px;border:3px solid var(--edge);border-radius:16px;background:var(--card);box-shadow:0 4px 0 var(--shadow);font:1.7rem/1 var(--font-d);color:var(--ink)}
+.key:active{transform:translateY(3px);box-shadow:0 1px 0 var(--shadow)}
+.key.bk{background:var(--coral-t);font-size:1.3rem}
+.key.go{background:var(--mint);color:var(--on);font-size:1.3rem}
+.key:disabled{opacity:.4;box-shadow:0 4px 0 var(--shadow)}
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.choice{border:3px solid var(--edge);border-radius:18px;background:var(--card);box-shadow:0 4px 0 var(--shadow);padding:10px 4px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink)}
+.choice b{font:2.4rem/1.1 var(--font-d)}
+.choice small{font-size:.8rem;color:var(--soft)}
+.choice:active{transform:translateY(3px);box-shadow:0 1px 0 var(--shadow)}
+.choice.bad{background:var(--coral-t);opacity:.6}
+.choice.ok{background:var(--mint-t)}
+.nextbar{margin-top:18px;display:flex;justify-content:center}
+.big{border:3px solid var(--edge);border-radius:18px;background:var(--mint);color:var(--on);box-shadow:0 5px 0 var(--shadow);
+  padding:12px 32px;font:1.35rem/1.2 var(--font-d);min-width:min(100%,240px)}
+.big:active{transform:translateY(3px);box-shadow:0 2px 0 var(--shadow)}
+.big.alt{background:var(--card);color:var(--ink)}
 
-    /* 하단 조작 안내 */
-    #instructions {
-      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-      background: rgba(10, 15, 28, 0.6); backdrop-filter: blur(6px);
-      padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);
-      font-size: 0.78rem; color: rgba(255, 255, 255, 0.75); pointer-events: none;
-    }
-  </style>
+/* result */
+.rcard{position:relative;overflow:hidden;border:3px solid var(--edge);border-radius:28px;background:var(--card);box-shadow:0 6px 0 var(--shadow);
+  padding:26px 16px 22px;text-align:center}
+.rcard .mascot{width:104px;height:104px;margin:0 auto}
+.rcard h2{font:1.9rem/1.2 var(--font-d);margin:8px 0 4px;text-wrap:balance}
+.rstars{display:flex;justify-content:center;gap:6px;font-size:3.2rem;line-height:1;margin:6px 0}
+.rstars i{font-style:normal;color:var(--grid);-webkit-text-stroke:2px var(--edge)}
+.rstars i.on{color:var(--sun);animation:pop .5s backwards}
+.rstars i:nth-child(2){animation-delay:.2s}.rstars i:nth-child(3){animation-delay:.4s}
+@keyframes pop{0%{transform:scale(0) rotate(-40deg)}70%{transform:scale(1.3)}100%{transform:none}}
+.rsum{color:var(--soft);margin:0}
+.review{list-style:none;margin:16px auto 0;padding:0;max-width:420px;text-align:left;display:grid;gap:6px}
+.review li{display:flex;justify-content:space-between;gap:10px;border:2.5px solid var(--edge);border-radius:12px;padding:6px 12px;background:var(--paper);font:1.05rem/1.4 var(--font-d)}
+.review em{font:normal .8rem/1.9 var(--font-b);color:var(--soft);white-space:nowrap}
+.rbtns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:20px}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;top:-14px;width:10px;height:14px;border-radius:3px;animation:fall 2.6s ease-in forwards}
+@keyframes fall{to{transform:translateY(520px) rotate(540deg);opacity:.9}}
+@media (prefers-reduced-motion:reduce){
+  .screen,.mascot.happy,.slot.bad,.rstars i.on,.confetti i{animation:none}
+}
+</style>
 
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/"
-      }
-    }
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
-</head>
-<body>
+<div class="wrap">
+  <main id="home" class="screen">
+    <header class="head">
+      <span id="homeMascot"></span>
+      <div>
+        <h1>셈셈 수학 놀이터</h1>
+        <p>학년과 단원, 문제 수를 골라 풀어요</p>
+      </div>
+      <div class="total" aria-label="모은 별">★ <span id="total">0</span></div>
+    </header>
+    <div class="tabs" id="tabs"></div>
+    <p class="gdesc" id="gdesc"></p>
+    <div class="nsel" id="nsel"></div>
+    <div id="units"></div>
+    <p class="note">문제는 풀 때마다 새로 만들어져요. 별은 이 기기에 저장돼요.</p>
+  </main>
 
-  <div id="hud">
-    <h1>언덕 위 천문대 (성남/서울 기준)</h1>
-    <p class="sub" id="time-display">시간 계산 중...</p>
-
-    <div class="control-group">
-      <label>
-        <span>시간 탐색 (현재 기준)</span>
-        <span id="offset-val">+0.0시간</span>
-      </label>
-      <input type="range" id="time-slider" min="-12" max="12" step="0.1" value="0" />
+  <section id="play" class="screen" hidden>
+    <div class="top">
+      <button class="quit" id="quit" type="button">← 나가기</button>
+      <div class="prog" id="prog" aria-hidden="true"></div>
+      <div class="count" id="count"></div>
     </div>
-
-    <div class="btn-row">
-      <button id="toggle-constellations" class="active">별자리 선: 켜짐</button>
-      <button id="toggle-compass" class="active">방위 표식: 켜짐</button>
-      <button id="reset-time">현재 시각</button>
+    <div class="talk">
+      <span id="playMascot"></span>
+      <div class="bubble" id="bubble" aria-live="polite"></div>
     </div>
-  </div>
+    <div class="stage" id="stage"></div>
+    <div class="hintbox" id="hintbox"></div>
+    <div id="inputArea"></div>
+    <div class="nextbar" id="nextbar" hidden><button class="big" id="nextBtn" type="button">다음 문제 →</button></div>
+  </section>
 
-  <div id="event-card">
-    <h2>✨ 오늘의 밤하늘 & 우주쇼</h2>
-    <ul id="event-list">
-      <li>천체 위치 계산 중...</li>
-    </ul>
-    <div class="highlight-event" id="astro-highlight">
-      🌠 <strong>사자자리 유성우 활동기</strong><br/>
-      자정 이후 동쪽 하늘이 높아지면서 육안 관측 조건이 좋아집니다. 슬라이더를 밤 시간대로 옮겨보세요!
-    </div>
-  </div>
+  <section id="result" class="screen" hidden></section>
+</div>
 
-  <div id="tooltip">
-    <div class="t-title" id="tt-name">천체 이름</div>
-    <div class="t-sub" id="tt-desc">상세 정보</div>
-  </div>
+<script>
+/* ============ 문제 생성 ============ */
+const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[R(0,a.length-1)];
+const find=(gen,ok)=>{let p;for(let i=0;i<400;i++){p=gen();if(ok(p))return p;}return p;};
+const carryAdd=(a,b)=>{let c=0;while(a>0||b>0||c>0){const s=a%10+b%10+c;if(s>=10)return true;c=0;a=Math.floor(a/10);b=Math.floor(b/10);}return false;};
+const borrow=(a,b)=>{while(b>0){if(a%10<b%10)return true;a=Math.floor(a/10);b=Math.floor(b/10);}return false;};
+const EMO=['🍎','⭐','🐟','🍓','🐥','🍪','🎈','🚗'];
+const frac=(n,d)=>`<span class="frac"><span>${n}</span><span>${d}</span></span>`;
+const strip=s=>s.replace(/<[^>]+>/g,'');
+const H=(tpl,ans,o={})=>({layout:'h',tpl,ans,hint:o.hint||'',visual:o.visual||'',sum:o.sum||strip(tpl.replace('{S}',ans))});
+const V=(a,op,b,ans,hint)=>({layout:'v',a,op,b,ans,hint,sum:`${a} ${op} ${b} = ${ans}`});
+const C=(l,r,ans,sum,hint)=>({layout:'c',l,r,ans,hint,sum});
+function pie(total,k){
+  const r=62,c=70;let s='';
+  for(let i=0;i<total;i++){
+    const a0=-Math.PI/2+i*2*Math.PI/total,a1=-Math.PI/2+(i+1)*2*Math.PI/total;
+    s+=`<path class="${i<k?'pf':'pe'}" d="M${c} ${c}L${(c+r*Math.cos(a0)).toFixed(1)} ${(c+r*Math.sin(a0)).toFixed(1)}A${r} ${r} 0 0 1 ${(c+r*Math.cos(a1)).toFixed(1)} ${(c+r*Math.sin(a1)).toFixed(1)}Z"/>`;
+  }
+  return `<svg class="pie" viewBox="0 0 140 140" role="img" aria-label="${total}조각 중 ${k}조각 색칠">${s}</svg>`;
+}
+const mulGen=dans=>()=>{
+  const x=pick(dans),y=R(1,9),sw=Math.random()<.4,prod=x*y;
+  const hint=y>1?`${x}단을 떠올려 봐요. ${x}×${y-1}=${x*(y-1)}이니까, ${x}만큼 더 가요.`:`${x}×1은 ${x}이에요.`;
+  if(Math.random()<.7) return H(sw?`${y} × ${x} = {S}`:`${x} × ${y} = {S}`,prod,{hint});
+  return sw?H(`{S} × ${x} = ${prod}`,y,{hint}):H(`${x} × {S} = ${prod}`,y,{hint});
+};
+const UNITS=[
+ /* 1학년 */
+ {id:'g1-count',g:1,grp:'수 알아보기',name:'수 세기',badge:'123',ex:'● ● ● → 3',q:'모두 몇 개인지 세어 보세요.',gen:()=>{
+   const n=R(1,20),e=pick(EMO);
+   return H('모두 {S}개',n,{hint:'5개씩 묶어서 세어 보면 쉬워요.',visual:`<div class="objs">${Array.from({length:n},()=>`<span>${e}</span>`).join('')}</div>`});}},
+ {id:'g1-compare',g:1,grp:'수 알아보기',name:'수의 크기 비교',badge:'>',ex:'47 ○ 52',q:'알맞은 기호를 골라요.',gen:()=>{
+   const a=R(1,99);const b=Math.random()<.5?Math.min(99,Math.max(1,a+R(-9,9))):R(1,99);
+   const ans=a>b?'>':a<b?'<':'=';
+   return C(a,b,ans,`${a} ${ans} ${b}`,'십의 자리 수부터 비교해요. 같으면 일의 자리를 봐요.');}},
+ {id:'g1-make10',g:1,grp:'덧셈과 뺄셈 기초',name:'모으기와 가르기',badge:'□',ex:'7 + □ = 10',q:'빈칸에 알맞은 수를 써요.',gen:()=>{
+   const n=R(6,10),a=R(1,n-1);
+   return H(`${a} + {S} = ${n}`,n-a,{hint:`${a}에서 ${n}까지 몇 번 더 세면 될까요? 손가락으로 세어 봐요.`});}},
+ {id:'g1-add10',g:1,grp:'덧셈과 뺄셈 기초',name:'덧셈 (합이 10 이하)',badge:'+',ex:'3 + 4',q:'계산해 보세요.',gen:()=>{
+   const a=R(1,9),b=R(1,10-a);
+   return H(`${a} + ${b} = {S}`,a+b,{hint:`${a}에서 ${b}만큼 이어서 세어요.`});}},
+ {id:'g1-sub10',g:1,grp:'덧셈과 뺄셈 기초',name:'뺄셈 (10 이하)',badge:'−',ex:'8 − 3',q:'계산해 보세요.',gen:()=>{
+   const a=R(2,10),b=R(1,a-1);
+   return H(`${a} − ${b} = {S}`,a-b,{hint:`${a}에서 ${b}만큼 거꾸로 세어요.`});}},
+ {id:'g1-add-carry',g:1,grp:'받아올림 · 받아내림',name:'받아올림이 있는 덧셈',badge:'+',ex:'8 + 5',q:'10을 먼저 만들어 계산해요.',gen:()=>{
+   const [a,b]=find(()=>[R(2,9),R(2,9)],p=>p[0]+p[1]>=11);
+   return H(`${a} + ${b} = {S}`,a+b,{hint:`${a}와 ${10-a}를 더하면 10! ${b}에서 ${10-a}를 가져가면 ${b-(10-a)}이 남아요. 10 + ${b-(10-a)} = ${a+b}`});}},
+ {id:'g1-sub-borrow',g:1,grp:'받아올림 · 받아내림',name:'받아내림이 있는 뺄셈',badge:'−',ex:'13 − 6',q:'10에서 먼저 빼서 계산해요.',gen:()=>{
+   const [a,b]=find(()=>[R(11,18),R(2,9)],p=>p[0]%10<p[1]);
+   return H(`${a} − ${b} = {S}`,a-b,{hint:`${a}를 10과 ${a-10}으로 나눠요. 10 − ${b} = ${10-b}, 그리고 ${10-b} + ${a-10} = ${a-b}`});}},
+ /* 2학년 */
+ {id:'g2-add',g:2,grp:'두 자리 수 덧셈',name:'받아올림 없는 덧셈',badge:'+',ex:'32 + 25',q:'일의 자리부터 계산해요.',gen:()=>{
+   const [a,b]=find(()=>[R(11,88),R(11,88)],p=>!carryAdd(p[0],p[1]));
+   return V(a,'+',b,a+b,'일의 자리끼리, 십의 자리끼리 더해요.');}},
+ {id:'g2-add-carry',g:2,grp:'두 자리 수 덧셈',name:'받아올림 있는 덧셈',badge:'+',ex:'47 + 38',q:'일의 자리부터 계산해요.',gen:()=>{
+   const [a,b]=find(()=>[R(11,89),R(11,89)],p=>carryAdd(p[0],p[1]));
+   return V(a,'+',b,a+b,'일의 자리 합이 10이 넘으면, 십의 자리로 1을 올려 더해요.');}},
+ {id:'g2-sub',g:2,grp:'두 자리 수 뺄셈',name:'받아내림 없는 뺄셈',badge:'−',ex:'58 − 23',q:'일의 자리부터 계산해요.',gen:()=>{
+   const [a,b]=find(()=>{const a=R(20,99);return [a,R(10,a-1)];},p=>p[0]>p[1]&&!borrow(p[0],p[1]));
+   return V(a,'−',b,a-b,'일의 자리끼리, 십의 자리끼리 빼요.');}},
+ {id:'g2-sub-borrow',g:2,grp:'두 자리 수 뺄셈',name:'받아내림 있는 뺄셈',badge:'−',ex:'62 − 27',q:'일의 자리부터 계산해요.',gen:()=>{
+   const [a,b]=find(()=>{const a=R(21,99);return [a,R(12,a-1)];},p=>p[0]>p[1]&&borrow(p[0],p[1]));
+   return V(a,'−',b,a-b,'일의 자리끼리 뺄 수 없으면, 십의 자리에서 10을 받아 와요.');}},
+ {id:'g2-mul25',g:2,grp:'곱셈구구',name:'2단 · 5단',badge:'×',ex:'5 × 6',q:'곱셈구구를 외워서 풀어요.',gen:mulGen([2,5])},
+ {id:'g2-mul34',g:2,grp:'곱셈구구',name:'3단 · 4단',badge:'×',ex:'4 × 7',q:'곱셈구구를 외워서 풀어요.',gen:mulGen([3,4])},
+ {id:'g2-mul67',g:2,grp:'곱셈구구',name:'6단 · 7단',badge:'×',ex:'6 × 8',q:'곱셈구구를 외워서 풀어요.',gen:mulGen([6,7])},
+ {id:'g2-mul89',g:2,grp:'곱셈구구',name:'8단 · 9단',badge:'×',ex:'9 × 7',q:'곱셈구구를 외워서 풀어요.',gen:mulGen([8,9])},
+ {id:'g2-mulmix',g:2,grp:'곱셈구구',name:'곱셈구구 섞어서',badge:'×',ex:'□ × 8 = 56',q:'곱셈구구를 외워서 풀어요.',gen:mulGen([2,3,4,5,6,7,8,9])},
+ /* 3학년 */
+ {id:'g3-add',g:3,grp:'세 자리 수 덧셈과 뺄셈',name:'세 자리 수 덧셈',badge:'+',ex:'356 + 478',q:'일의 자리부터 계산해요.',gen:()=>{
+   const a=R(100,899),b=R(100,899);
+   return V(a,'+',b,a+b,'일, 십, 백의 자리 순서로 더해요. 10이 넘으면 윗자리로 1을 올려요.');}},
+ {id:'g3-sub',g:3,grp:'세 자리 수 덧셈과 뺄셈',name:'세 자리 수 뺄셈',badge:'−',ex:'721 − 358',q:'일의 자리부터 계산해요.',gen:()=>{
+   const a=R(200,999),b=R(100,a-1);
+   return V(a,'−',b,a-b,'일, 십, 백의 자리 순서로 빼요. 뺄 수 없으면 윗자리에서 10을 받아 와요.');}},
+ {id:'g3-mul',g:3,grp:'곱셈',name:'(두 자리)×(한 자리) 올림 없음',badge:'×',ex:'23 × 3',q:'일의 자리부터 곱해요.',gen:()=>{
+   const [a,b]=find(()=>[R(11,49),R(2,4)],p=>p[0]%10!==0&&(p[0]%10)*p[1]<10&&Math.floor(p[0]/10)*p[1]<10);
+   return V(a,'×',b,a*b,'일의 자리끼리, 십의 자리끼리 곱해요.');}},
+ {id:'g3-mul-carry',g:3,grp:'곱셈',name:'(두 자리)×(한 자리) 올림 있음',badge:'×',ex:'47 × 6',q:'일의 자리부터 곱해요.',gen:()=>{
+   const [a,b]=find(()=>[R(12,98),R(2,9)],p=>p[0]%10!==0&&((p[0]%10)*p[1]>=10||Math.floor(p[0]/10)*p[1]>=10));
+   return V(a,'×',b,a*b,'일의 자리 곱이 10이 넘으면 올림한 수를 십의 자리 곱에 더해요.');}},
+ {id:'g3-div',g:3,grp:'나눗셈',name:'나눗셈 (곱셈구구 이용)',badge:'÷',ex:'42 ÷ 6',q:'곱셈구구를 거꾸로 생각해요.',gen:()=>{
+   const d=R(2,9),q=R(2,9);
+   return H(`${d*q} ÷ ${d} = {S}`,q,{hint:`${d} × □ = ${d*q}에서 □를 찾아요. ${d}단을 떠올려 봐요.`});}},
+ {id:'g3-frac',g:3,grp:'분수',name:'분수 알아보기',badge:'½',ex:'8조각 중 3조각',q:'색칠한 부분을 분수로 나타내요.',gen:()=>{
+   const t=R(2,9),k=R(1,t-1);
+   return H(`<span class="frac"><span>{S}</span><span>${t}</span></span>`,k,{sum:`${k}/${t}`,visual:pie(t,k),hint:`전체를 똑같이 ${t}조각으로 나눈 것 중, 색칠한 조각 수가 위쪽(분자)에 와요.`});}},
+ {id:'g3-frac-cmp',g:3,grp:'분수',name:'분수의 크기 비교',badge:'<',ex:'3/8 ○ 5/8',q:'알맞은 기호를 골라요.',gen:()=>{
+   const d=R(3,12),[a,b]=find(()=>[R(1,d-1),R(1,d-1)],p=>p[0]!==p[1]);
+   const ans=a>b?'>':'<';
+   return C(frac(a,d),frac(b,d),ans,`${a}/${d} ${ans} ${b}/${d}`,'분모가 같으면 분자가 클수록 더 큰 분수예요.');}}
+];
+/* ---- 논리 · 사고력 (5지선다) ---- */
+const circ='①②③④⑤';
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=R(0,i);[a[i],a[j]]=[a[j],a[i]];}return a;};
+const near=(a,lo=0,ds=[1,-1,2,-2,3,-3,5,-5,10,-10])=>ds.map(d=>a+d).filter(v=>v>=lo&&v!==a);
+const M=(q,ans,wrongs,o={})=>{
+  const a=String(ans);
+  let pool=[...new Set(wrongs.map(String))].filter(x=>x!==a);
+  if(pool.length<4&&/^\d+$/.test(a))for(const d of [1,2,3,4,6,7,8,9,11,12,-1,-2,-3,-4]){const v=String(+a+d);if(+v>=0&&v!==a&&!pool.includes(v))pool.push(v);if(pool.length>=6)break;}
+  let opts=[a,...shuffle(pool.slice(0,7)).slice(0,4)];
+  opts=(!o.mix&&opts.every(x=>/^\d+$/.test(x)))?opts.sort((x,y)=>x-y):shuffle(opts);
+  if(o.fixed)opts=o.fixed.slice();
+  return {layout:'m',q,ans:a,opts,ansText:circ[opts.indexOf(a)]+'번',hint:o.hint||'',visual:o.visual||'',key:o.key,sum:o.sum||`${strip(q)} → ${a}`};
+};
+const seqHTML=(arr,bi)=>`<div class="seq">${arr.map((v,i)=>i===bi?'<span class="q">?</span>':`<span>${v}</span>`).join('')}</div>`;
+const seqSum=(arr,bi)=>arr.map((v,i)=>i===bi?'□':v).join(', ');
+const eqHTML=s=>`<div class="eq">${s}</div>`;
+const NM=['민수','지아','서아','하나','나리','보라','소라','도하'];
+const IT=['사과','쿠키','자두','바나나','호두','고구마'];
+const LG='논리 · 사고력';
+const LOGIC=[
+ {id:'g1-pattern',g:1,grp:LG,name:'규칙 찾기',badge:'?',ex:'2, 4, 6, □, 10',q:'규칙을 찾아 ?에 들어갈 것을 골라요.',gen:()=>{
+   if(Math.random()<.5){
+     const step=R(1,3),up=Math.random()<.5,st=up?R(1,10):R(12,20);
+     const seq=Array.from({length:5},(_,i)=>st+(up?step*i:-step*i)),bi=R(1,4),ans=seq[bi];
+     return M('규칙을 찾아 ?에 들어갈 수를 골라요.',ans,[ans+step,ans-step,...near(ans,0)].filter(v=>v>=0),{visual:seqHTML(seq,bi),hint:`이웃한 수가 ${step}씩 ${up?'커져요':'작아져요'}.`,sum:`${seqSum(seq,bi)} → ${ans}`});
+   }
+   const P=pick(['AB','AAB','ABB','ABC']),em=shuffle(EMO),map={A:em[0],B:em[1],C:em[2]},L=P.length;
+   const seq=Array.from({length:7},(_,i)=>map[P[i%L]]),bi=R(2*L-1,6),ans=seq[bi];
+   return M('규칙을 찾아 ?에 들어갈 모양을 골라요.',ans,em.filter(e=>e!==ans),{visual:seqHTML(seq,bi),hint:`같은 모양이 ${L}개씩 되풀이돼요.`,sum:`${seq.map((v,i)=>i===bi?'□':v).join(' ')} → ${ans}`});
+ }},
+ {id:'g1-word',g:1,grp:LG,name:'이야기 수학',badge:'?',ex:'사과 5개 + 3개',q:'이야기를 읽고 답을 골라요.',gen:()=>{
+   const nm=pick(NM),it=pick(IT),t=R(0,2);
+   if(t===0){const a=R(3,12),b=R(2,Math.min(9,20-a));return M(`${nm}는 ${it}를 ${a}개 가지고 있었어요. ${b}개를 더 받았어요. 지금 ${it}는 모두 몇 개일까요?`,a+b,near(a+b,1),{hint:'더 받았으니 두 수를 더해요.',sum:`${it} ${a}개 + ${b}개 → ${a+b}`});}
+   if(t===1){const a=R(6,18),b=R(2,a-2);return M(`${nm}는 ${it}를 ${a}개 가지고 있었어요. 그중 ${b}개를 먹었어요. 남은 ${it}는 몇 개일까요?`,a-b,near(a-b,1),{hint:'먹은 만큼 빼요.',sum:`${it} ${a}개 − ${b}개 → ${a-b}`});}
+   const n2=pick(NM.filter(x=>x!==nm)),b=R(2,9),d=R(2,8),a=b+d;
+   return M(`${nm}는 ${it}가 ${a}개, ${n2}는 ${it}가 ${b}개 있어요. ${nm}는 ${n2}보다 ${it}가 몇 개 더 많을까요?`,d,near(d,1),{hint:'얼마나 더 많은지는 빼기로 구해요.',sum:`${a}개와 ${b}개의 차 → ${d}`});
+ }},
+ {id:'g1-biggest',g:1,grp:LG,name:'가장 큰 수 · 작은 수',badge:'?',ex:'가장 큰 수는?',q:'수를 비교해서 골라요.',gen:()=>{
+   const set=new Set();while(set.size<5)set.add(R(1,99));
+   const arr=[...set],big=Math.random()<.5,ans=big?Math.max(...arr):Math.min(...arr);
+   return M(`다음 수 중 가장 ${big?'큰':'작은'} 수는 어느 것일까요?`,ans,arr.filter(x=>x!==ans),{mix:true,hint:'십의 자리부터 비교해요. 같으면 일의 자리를 봐요.',sum:`${arr.join(', ')} 중 가장 ${big?'큰':'작은'} 수 → ${ans}`});
+ }},
+ {id:'g2-pattern',g:2,grp:LG,name:'규칙 찾기',badge:'?',ex:'3, 6, 9, □, 15',q:'규칙을 찾아 ?에 들어갈 수를 골라요.',gen:()=>{
+   if(Math.random()<.7){
+     const step=pick([2,3,4,5,10]),st=R(1,30),seq=Array.from({length:5},(_,i)=>st+step*i),bi=R(1,4),ans=seq[bi];
+     return M('규칙을 찾아 ?에 들어갈 수를 골라요.',ans,[ans+step,ans-step,ans+1,ans-1,ans+2,ans-2,ans+2*step].filter(v=>v>=0),{visual:seqHTML(seq,bi),hint:`이웃한 수의 차가 ${step}이에요.`,sum:`${seqSum(seq,bi)} → ${ans}`});
+   }
+   const st=R(1,3),seq=Array.from({length:5},(_,i)=>st*2**i),bi=R(2,4),ans=seq[bi];
+   return M('규칙을 찾아 ?에 들어갈 수를 골라요.',ans,[ans+2,ans-2,ans+1,ans-1,ans*2,ans+4,ans-4].filter(v=>v>=0),{visual:seqHTML(seq,bi),hint:'앞의 수의 2배가 다음 수예요.',sum:`${seqSum(seq,bi)} → ${ans}`});
+ }},
+ {id:'g2-word',g:2,grp:LG,name:'이야기 수학',badge:'?',ex:'3개씩 4봉지',q:'이야기를 읽고 답을 골라요.',gen:()=>{
+   const nm=pick(NM),n2=pick(NM.filter(x=>x!==nm)),it=pick(IT),t=R(0,2),ds=[10,-10,1,-1,2,-2,5,-5];
+   if(t===0){const n=R(3,9),m=R(2,9),ans=n*m;return M(`${nm}는 한 봉지에 ${it}가 ${n}개씩 들어 있는 봉지를 ${m}개 샀어요. ${it}는 모두 몇 개일까요?`,ans,[ans+n,ans-n,ans+m,ans-m,ans+1,ans-1].filter(v=>v>0),{hint:`${n}개씩 ${m}번이니까 ${n} × ${m}이에요.`,sum:`${n}개씩 ${m}봉지 → ${ans}`});}
+   if(t===1){const a=R(21,59),b=R(21,59),ans=a+b;return M(`${nm}는 ${it}를 ${a}개, ${n2}는 ${it}를 ${b}개 가지고 있어요. 두 사람이 가진 ${it}는 모두 몇 개일까요?`,ans,near(ans,1,ds),{hint:'두 사람의 것을 합치니까 더해요.',sum:`${a}개 + ${b}개 → ${ans}`});}
+   const a=R(40,95),b=R(11,a-15),ans=a-b;
+   return M(`상자에 ${it}가 ${a}개 있었어요. 그중 ${b}개를 꺼냈어요. 상자에 남은 ${it}는 몇 개일까요?`,ans,near(ans,1,ds),{hint:'꺼낸 만큼 빼요.',sum:`${a}개 − ${b}개 → ${ans}`});
+ }},
+ {id:'g2-unknown',g:2,grp:LG,name:'□에 알맞은 수',badge:'?',ex:'□ + 17 = 52',q:'□에 알맞은 수를 골라요.',gen:()=>{
+   const t=R(0,2),ds=[1,-1,2,-2,10,-10,5,-5];
+   if(t===0){const x=R(10,60),b=R(5,30),s=x+b;return M('□에 알맞은 수를 골라요.',x,[s,x+b,x-b,...near(x,1,ds)].filter(v=>v>0),{visual:eqHTML(`□ + ${b} = ${s}`),hint:`${s}에서 ${b}를 빼면 □를 알 수 있어요.`,sum:`□ + ${b} = ${s} → ${x}`});}
+   if(t===1){const x=R(30,90),b=R(5,25),d=x-b;return M('□에 알맞은 수를 골라요.',x,[d,d-b,x+b,...near(x,1,ds)].filter(v=>v>0),{visual:eqHTML(`□ − ${b} = ${d}`),hint:`${d}에 ${b}를 더하면 □가 돼요.`,sum:`□ − ${b} = ${d} → ${x}`});}
+   const x=R(5,40),s=R(x+10,90),d=s-x;
+   return M('□에 알맞은 수를 골라요.',x,[d,s+d,s-x-5,...near(x,1,ds)].filter(v=>v>0),{visual:eqHTML(`${s} − □ = ${d}`),hint:`${s}에서 ${d}를 빼면 □가 돼요.`,sum:`${s} − □ = ${d} → ${x}`});
+ }},
+ {id:'g2-cards',g:2,grp:LG,name:'수 카드로 수 만들기',badge:'?',ex:'3 7 5 → 가장 큰 수',q:'수 카드를 늘어놓아 수를 만들어요.',gen:()=>{
+   const ds=shuffle([1,2,3,4,5,6,7,8,9]).slice(0,3),big=Math.random()<.5,s=[...ds].sort((a,b)=>a-b);
+   const ans=big?s[2]*10+s[1]:s[0]*10+s[1],perms=[];
+   for(const a of ds)for(const b of ds)if(a!==b)perms.push(a*10+b);
+   return M(`수 카드 ${ds.join(', ')} 중 2장을 골라 만들 수 있는 가장 ${big?'큰':'작은'} 두 자리 수는 얼마일까요?`,ans,perms.filter(v=>v!==ans),{mix:true,visual:`<div class="seq">${ds.map(d=>`<span>${d}</span>`).join('')}</div>`,hint:big?'큰 수부터 십의 자리, 일의 자리에 놓아요.':'작은 수를 십의 자리에 놓아요.',sum:`카드 ${ds.join(', ')}로 가장 ${big?'큰':'작은'} 두 자리 수 → ${ans}`});
+ }},
+ {id:'g3-pattern',g:3,grp:LG,name:'규칙 찾기',badge:'?',ex:'3, 6, 12, □, 48',q:'규칙을 찾아 ?에 들어갈 수를 골라요.',gen:()=>{
+   if(Math.random()<.5){
+     const step=pick([6,7,8,9,12,15,25]),st=R(10,100),seq=Array.from({length:5},(_,i)=>st+step*i),bi=R(1,4),ans=seq[bi];
+     return M('규칙을 찾아 ?에 들어갈 수를 골라요.',ans,[ans+step,ans-step,ans+1,ans-1,ans+10,ans-10,ans+2*step].filter(v=>v>0),{visual:seqHTML(seq,bi),hint:`이웃한 수의 차가 ${step}이에요.`,sum:`${seqSum(seq,bi)} → ${ans}`});
+   }
+   const r=pick([2,3]),st=R(1,4),seq=Array.from({length:5},(_,i)=>st*r**i),bi=R(2,4),ans=seq[bi];
+   return M('규칙을 찾아 ?에 들어갈 수를 골라요.',ans,[ans+r,ans-r,ans+2,ans-2,ans+1,ans-1,ans*r].filter(v=>v>0),{visual:seqHTML(seq,bi),hint:`앞의 수의 ${r}배가 다음 수예요.`,sum:`${seqSum(seq,bi)} → ${ans}`});
+ }},
+ {id:'g3-word',g:3,grp:LG,name:'이야기 수학',badge:'?',ex:'36개를 6명에게',q:'이야기를 읽고 답을 골라요.',gen:()=>{
+   const it=pick(IT),t=R(0,2);
+   if(t===0){const p=R(3,9),q=R(3,12),tot=p*q;return M(`${it} ${tot}개를 ${p}명에게 똑같이 나누어 주려고 해요. 한 명이 몇 개씩 받을까요?`,q,[q+1,q-1,q+2,q-2,q+3,p+q].filter(v=>v>0),{hint:`똑같이 나누니까 ${tot} ÷ ${p}를 계산해요.`,sum:`${tot}개 ÷ ${p}명 → ${q}`});}
+   if(t===1){const n=R(12,48),m=R(3,9),ans=n*m;return M(`한 상자에 ${it}가 ${n}개씩 들어 있어요. ${m}상자에 들어 있는 ${it}는 모두 몇 개일까요?`,ans,[ans+n,ans-n,ans+10,ans-10,ans+m,ans+1,ans-1].filter(v=>v>0),{hint:`${n}개씩 ${m}상자니까 ${n} × ${m}이에요.`,sum:`${n}개씩 ${m}상자 → ${ans}`});}
+   const T=R(250,400),d=R(12,30),days=R(3,7),ans=T-d*days;
+   return M(`동화책 ${T}쪽을 하루에 ${d}쪽씩 ${days}일 동안 읽었어요. 아직 읽지 않은 쪽수는 몇 쪽일까요?`,ans,[T-d*(days+1),T-d*(days-1),d*days,ans+10,ans-10,ans+1,ans-1].filter(v=>v>0),{hint:`먼저 읽은 쪽수 ${d} × ${days}를 구하고, 전체에서 빼요.`,sum:`${T}쪽 − ${d}쪽×${days}일 → ${ans}`});
+ }},
+ {id:'g3-unknown',g:3,grp:LG,name:'□에 알맞은 수',badge:'?',ex:'□ × 6 = 42',q:'□에 알맞은 수를 골라요.',gen:()=>{
+   const t=R(0,2),ds=[1,-1,2,-2,10,-10,5,-5];
+   if(t===0){const b=R(3,9),x=R(3,15),p=b*x;return M('□에 알맞은 수를 골라요.',x,[p,p-b,x+b,...near(x,1,ds)].filter(v=>v>0),{visual:eqHTML(`□ × ${b} = ${p}`),hint:`곱셈의 반대는 나눗셈이에요. ${p} ÷ ${b} = □`,sum:`□ × ${b} = ${p} → ${x}`});}
+   if(t===1){const b=R(3,9),q=R(3,15),x=b*q;return M('□에 알맞은 수를 골라요.',x,[x+b,x-b,q+b,...near(x,1,ds)].filter(v=>v>0),{visual:eqHTML(`□ ÷ ${b} = ${q}`),hint:`나눗셈의 반대는 곱셈이에요. ${q} × ${b} = □`,sum:`□ ÷ ${b} = ${q} → ${x}`});}
+   const x=R(20,80),a=R(10,40),b=R(5,30),r=x+a-b;
+   return M('□에 알맞은 수를 골라요.',x,[r,x+a,x+b,...near(x,1,ds)].filter(v=>v>0),{visual:eqHTML(`□ + ${a} − ${b} = ${r}`),hint:`거꾸로 계산해요. ${r} + ${b} − ${a} = □`,sum:`□ + ${a} − ${b} = ${r} → ${x}`});
+ }},
+ {id:'g3-cards',g:3,grp:LG,name:'수 카드로 수 만들기',badge:'?',ex:'4장 중 3장으로',q:'수 카드를 늘어놓아 수를 만들어요.',gen:()=>{
+   const ds=shuffle([1,2,3,4,5,6,7,8,9]).slice(0,4),big=Math.random()<.5,s=[...ds].sort((a,b)=>a-b);
+   const ans=big?s[3]*100+s[2]*10+s[1]:s[0]*100+s[1]*10+s[2],perms=[];
+   for(const a of ds)for(const b of ds)for(const c of ds)if(a!==b&&b!==c&&a!==c)perms.push(a*100+b*10+c);
+   const wr=perms.filter(v=>v!==ans).sort((x,y)=>Math.abs(x-ans)-Math.abs(y-ans));
+   return M(`수 카드 ${ds.join(', ')} 중 3장을 골라 만들 수 있는 가장 ${big?'큰':'작은'} 세 자리 수는 얼마일까요?`,ans,wr,{mix:true,visual:`<div class="seq">${ds.map(d=>`<span>${d}</span>`).join('')}</div>`,hint:big?'큰 수부터 백, 십, 일의 자리에 차례로 놓아요.':'작은 수부터 백, 십, 일의 자리에 차례로 놓아요.',sum:`카드 ${ds.join(', ')}로 가장 ${big?'큰':'작은'} 세 자리 수 → ${ans}`});
+ }}
+];
+/* ---- 도형 · 대수 · 평균 · 확률 ---- */
+const GEO='도형',ALG='대수 · 식과 규칙',AVG='평균 · 자료',PRB='가능성 · 확률';
+const COL=[['🔴','빨강','빨간색'],['🔵','파랑','파란색'],['🟡','노랑','노란색'],['🟢','초록','초록색'],['🟣','보라','보라색']];
+const rep=(e,n)=>Array.from({length:n},()=>e);
+const rnd=()=>Math.random();
+const ballsHTML=arr=>`<div class="balls" role="img" aria-label="주머니 속 공"><small>주머니 속 공</small>${shuffle(arr).map(e=>`<span>${e}</span>`).join('')}</div>`;
+const polySVG=(n,rot=0)=>`<polygon points="${Array.from({length:n},(_,i)=>{const a=(-90+rot+360*i/n)*Math.PI/180;return `${(60+48*Math.cos(a)).toFixed(1)},${(60+48*Math.sin(a)).toFixed(1)}`;}).join(' ')}"/>`;
+const svgWrap=inner=>`<svg class="shp" viewBox="0 0 120 120" role="img" aria-label="도형">${inner}</svg>`;
+const miniSVG=k=>k==='원'?'<svg class="mini" viewBox="0 0 40 40"><circle class="c" cx="20" cy="20" r="16"/></svg>':k==='삼각형'?'<svg class="mini" viewBox="0 0 40 40"><polygon class="t" points="20,4 36,35 4,35"/></svg>':'<svg class="mini" viewBox="0 0 40 40"><rect class="s" x="5" y="5" width="30" height="30"/></svg>';
+const tblHTML=(xs,ys)=>`<table class="tbl"><tr><th>입력</th>${xs.map(x=>`<td>${x}</td>`).join('')}</tr><tr><th>출력</th>${ys.map((y,i)=>i===ys.length-1?'<td class="q">?</td>':`<td>${y}</td>`).join('')}</tr></table>`;
+const barsHTML=vals=>{const mx=Math.max(...vals);return `<div class="bars">${vals.map(v=>`<div class="bar1"><i style="height:${Math.round(v/mx*90)+10}px"></i><span>${v}</span></div>`).join('')}</div>`;};
+const CHANCE=['불가능해요','일어날 것 같지 않아요','반반이에요','일어날 것 같아요','확실해요'];
+const MATHX=[
+ /* ===== 1학년 ===== */
+ {id:'g1-shape',g:1,grp:GEO,name:'도형 이름 맞히기',badge:'△',ex:'삼각형 · 사각형 · 원',q:'도형의 이름을 골라요.',gen:()=>{
+   const names=['삼각형','사각형','오각형','육각형','원'],i=R(0,4),ans=names[i];let inner,hint;
+   if(i===0){const t=pick([[[60,12],[12,104],[108,104]],[[20,100],[100,100],[72,14]],[[14,98],[106,98],[24,16]]]);inner=`<polygon points="${t.map(p=>p.join(',')).join(' ')}"/>`;hint='변이 3개, 꼭짓점이 3개예요.';}
+   else if(i===1){const w=R(60,100),h=Math.random()<.4?w:R(40,w-10);inner=`<rect x="${60-w/2}" y="${60-h/2}" width="${w}" height="${h}"/>`;hint='변이 4개, 꼭짓점이 4개예요.';}
+   else if(i===2){inner=polySVG(5,R(0,71));hint='변이 5개예요.';}
+   else if(i===3){inner=polySVG(6,R(0,59));hint='변이 6개예요.';}
+   else{inner='<circle cx="60" cy="60" r="48"/>';hint='둥글고 뾰족한 곳이 없어요.';}
+   return M('이 도형의 이름은 무엇일까요?',ans,names.filter(x=>x!==ans),{visual:svgWrap(inner),hint,key:rnd(),sum:`${ans} 모양 → ${ans}`});
+ }},
+ {id:'g1-shape-count',g:1,grp:GEO,name:'모양 세기',badge:'□',ex:'삼각형은 몇 개?',q:'같은 모양을 세어 보세요.',gen:()=>{
+   const kinds=['원','삼각형','사각형'],target=pick(kinds);
+   const items=find(()=>Array.from({length:R(9,14)},()=>pick(kinds)),a=>{const c=a.filter(x=>x===target).length;return c>=2&&c<=7;});
+   const ans=items.filter(x=>x===target).length;
+   return M(`${target}은 모두 몇 개일까요?`,ans,near(ans,1),{visual:`<div class="shapes">${items.map(miniSVG).join('')}</div>`,hint:'하나씩 짚어 가며 세면 틀리지 않아요.',key:rnd(),sum:`${target} 세기 → ${ans}`});
+ }},
+ {id:'g1-algebra',g:1,grp:ALG,name:'그림 식',badge:'🍎',ex:'🍎 + 🍎 = 8',q:'같은 그림은 같은 수예요.',gen:()=>{
+   const e=pick(EMO),e2=pick(EMO.filter(x=>x!==e)),t=R(0,2);
+   if(t===0){const a=R(2,9);return M(`${e}에 알맞은 수를 골라요.`,a,near(a,1),{visual:eqHTML(`${e} + ${e} = ${2*a}`),hint:`같은 수를 두 번 더해서 ${2*a}가 되는 수를 찾아요.`,key:rnd(),sum:`${e}+${e}=${2*a} → ${a}`});}
+   if(t===1){const a=R(2,10),b=R(2,8);return M(`${e}에 알맞은 수를 골라요.`,a,near(a,1),{visual:eqHTML(`${e} + ${b} = ${a+b}`),hint:`${a+b} − ${b} = ?`,key:rnd(),sum:`${e}+${b}=${a+b} → ${a}`});}
+   const a=R(2,8),b=R(2,8);
+   return M(`${e2}에 알맞은 수를 골라요.`,b,near(b,1),{visual:eqHTML(`${e} = ${a}<br>${e} + ${e2} = ${a+b}`),hint:`${e}가 ${a}이니까 ${a} + □ = ${a+b}예요.`,key:rnd(),sum:`${e}=${a}, ${e}+${e2}=${a+b} → ${b}`});
+ }},
+ {id:'g1-share',g:1,grp:AVG,name:'똑같이 나누기',badge:'÷',ex:'8개를 둘이서',q:'똑같이 나누면 몇 개씩일까요?',gen:()=>{
+   const nm=pick(NM),n2=pick(NM.filter(x=>x!==nm)),it=pick(IT),q=R(2,10);
+   return M(`${it} ${2*q}개를 ${nm}와 ${n2}가 똑같이 나누어 가지면 한 명이 몇 개씩 갖게 될까요?`,q,near(q,1),{hint:`${2*q}개를 둘로 똑같이 나눠요.`,sum:`${it} ${2*q}개를 2명이 똑같이 → ${q}`});
+ }},
+ {id:'g1-chance',g:1,grp:PRB,name:'더 많이 나올 색',badge:'🎲',ex:'🔴🔴🔴🔵 → 어느 색?',q:'공을 한 개 꺼내 볼까요?',gen:()=>{
+   const idx=shuffle([0,1,2,3,4]).slice(0,3),top=R(4,7),sec=R(1,top-1),thr=R(1,sec);
+   const cnt=[top,sec,thr],balls=idx.flatMap((ci,j)=>rep(COL[ci][0],cnt[j]));
+   const lab=ci=>`${COL[ci][0]} ${COL[ci][1]}`;
+   return M('주머니에서 공을 한 개 꺼낼 때, 가장 많이 나올 것 같은 색은 무엇일까요?',lab(idx[0]),[0,1,2,3,4].filter(c=>c!==idx[0]).map(lab),{mix:true,visual:ballsHTML(balls),hint:'가장 많이 들어 있는 색이 가장 자주 나와요.',key:rnd(),sum:`가장 많은 색 → ${lab(idx[0])}`});
+ }},
+ /* ===== 2학년 ===== */
+ {id:'g2-shape',g:2,grp:GEO,name:'변과 꼭짓점',badge:'⬠',ex:'오각형의 변은 몇 개?',q:'도형의 변과 꼭짓점을 알아봐요.',gen:()=>{
+   const nm=['','','','삼각형','사각형','오각형','육각형'],n=R(3,6),what=pick(['변','꼭짓점']);
+   if(Math.random()<.6){
+     const svg=svgWrap(n===4?polySVG(4,45):polySVG(n,R(0,50)));
+     return M(`이 도형의 ${what}은 모두 몇 개일까요?`,n,near(n,1,[1,-1,2,-2,3,-3]),{visual:svg,hint:'뾰족한 곳(꼭짓점)이나 곧은 선(변)을 하나씩 세어 봐요.',key:rnd(),sum:`${nm[n]}의 ${what} → ${n}`});
+   }
+   const names=['삼각형','사각형','오각형','육각형','원'];
+   return M(`${what}이 ${n}개인 도형의 이름은 무엇일까요?`,nm[n],names.filter(x=>x!==nm[n]),{hint:'삼각형은 3, 사각형은 4, 오각형은 5, 육각형은 6이에요.',sum:`${what} ${n}개인 도형 → ${nm[n]}`});
+ }},
+ {id:'g2-algebra',g:2,grp:ALG,name:'그림 식',badge:'🍎',ex:'🍎 + 🍌 = 11',q:'같은 그림은 같은 수예요.',gen:()=>{
+   const [e,e2]=shuffle(EMO).slice(0,2),t=R(0,2);
+   if(t===0){const a=R(2,9),b=find(()=>R(1,9),x=>x!==a);return M(`${e2}에 알맞은 수를 골라요.`,b,near(b,1),{visual:eqHTML(`${e} + ${e} = ${2*a}<br>${e} + ${e2} = ${a+b}`),hint:`먼저 ${e}를 구해요. 같은 수 두 개의 합이 ${2*a}예요.`,key:rnd(),sum:`${e}+${e}=${2*a}, ${e}+${e2}=${a+b} → ${b}`});}
+   if(t===1){const a=R(2,9);return M(`${e}에 알맞은 수를 골라요.`,a,near(a,1),{visual:eqHTML(`${e} + ${e} + ${e} = ${3*a}`),hint:`같은 수 세 개를 더해서 ${3*a}가 돼요.`,key:rnd(),sum:`${e}×3=${3*a} → ${a}`});}
+   const a=R(2,8),b=R(1,8);
+   return M(`${e2}에 알맞은 수를 골라요.`,b,near(b,1),{visual:eqHTML(`${e} + ${e} = ${2*a}<br>${e} + ${e2} + ${e2} = ${a+2*b}`),hint:`먼저 ${e}를 구해요. 그다음 ${e2} 두 개의 합을 구해요.`,key:rnd(),sum:`${e}+${e}=${2*a}, ${e}+${e2}+${e2}=${a+2*b} → ${b}`});
+ }},
+ {id:'g2-table',g:2,grp:ALG,name:'입력과 출력 규칙',badge:'⇒',ex:'입력 3 → 출력 8',q:'규칙을 찾아 빈칸을 채워요.',gen:()=>{
+   const k=R(2,9),plus=Math.random()<.6,xs=shuffle(Array.from({length:20},(_,i)=>i+10)).slice(0,4).sort((a,b)=>a-b);
+   const ys=xs.map(x=>plus?x+k:x-k),ans=ys[3];
+   return M('규칙을 찾아 ?에 알맞은 수를 골라요.',ans,[ans+k,ans-k,ans+1,ans-1,ans+2,ans-2,xs[3]].filter(v=>v>0),{visual:tblHTML(xs,ys),hint:plus?`출력은 입력보다 ${k} 커요.`:`출력은 입력보다 ${k} 작아요.`,key:rnd(),sum:`입력 ${xs.join(', ')} → 출력 ${ys.slice(0,3).join(', ')}, ${ans}`});
+ }},
+ {id:'g2-average',g:2,grp:AVG,name:'고르게 만들기',badge:'≈',ex:'3, 5, 4 → 모두 같게',q:'똑같이 맞추면 몇 개씩일까요?',gen:()=>{
+   const n=R(2,4),it=pick(IT),box=pick(['바구니','접시','상자']),w=['','','두','세','네'];
+   const vals=find(()=>Array.from({length:n},()=>R(2,12)),a=>a.reduce((x,y)=>x+y,0)%n===0&&new Set(a).size>1),ans=vals.reduce((x,y)=>x+y,0)/n;
+   return M(`${w[n]} ${box}에 ${it}가 각각 ${vals.join('개, ')}개 들어 있어요. 이 ${it}를 똑같이 나누어 담으면 한 ${box}에 몇 개씩일까요?`,ans,near(ans,1),{visual:barsHTML(vals),hint:`전부 더한 수를 ${w[n]} ${box}로 나눠요.`,key:rnd(),sum:`${vals.join(', ')}을 고르게 → ${ans}`});
+ }},
+ {id:'g2-chance',g:2,grp:PRB,name:'일어날 가능성',badge:'🎲',ex:'확실해요 · 불가능해요',q:'공을 꺼낼 가능성을 말해 봐요.',gen:()=>{
+   const [a,b]=shuffle([0,1,2,3,4]).slice(0,2),kind=pick(['sure','none','half','likely','unlikely']);
+   let tg,ot,ans,hint;
+   if(kind==='sure'){tg=R(3,6);ot=0;ans=CHANCE[4];hint='꺼낼 수 있는 공이 모두 그 색이에요.';}
+   else if(kind==='none'){tg=0;ot=R(3,6);ans=CHANCE[0];hint='주머니에 그 색 공이 하나도 없어요.';}
+   else if(kind==='half'){tg=ot=R(2,4);ans=CHANCE[2];hint='두 색의 공이 똑같이 들어 있어요.';}
+   else if(kind==='likely'){tg=R(5,8);ot=1;ans=CHANCE[3];hint='그 색 공이 훨씬 많이 들어 있어요.';}
+   else{tg=1;ot=R(5,8);ans=CHANCE[1];hint='그 색 공은 아주 조금만 들어 있어요.';}
+   const balls=[...rep(COL[a][0],tg),...rep(COL[b][0],ot)];
+   return M(`주머니에서 공을 한 개 꺼낼 때, ${COL[a][2]} 공이 나올 가능성은 어떨까요?`,ans,CHANCE.filter(x=>x!==ans),{fixed:CHANCE,visual:ballsHTML(balls),hint,key:rnd(),sum:`${COL[a][2]} 공 ${tg}개, 다른 공 ${ot}개 → ${ans}`});
+ }},
+ {id:'g2-cases',g:2,grp:PRB,name:'고르는 방법의 수',badge:'×',ex:'윗옷 3벌, 바지 2벌',q:'모두 몇 가지인지 구해요.',gen:()=>{
+   const a=R(2,4),b=R(2,4),ans=a*b,t=R(0,2);
+   const q=[`윗옷이 ${a}벌, 바지가 ${b}벌 있어요. 윗옷과 바지를 하나씩 골라 입는 방법은 모두 몇 가지일까요?`,
+     `과자가 ${a}종류, 음료수가 ${b}종류 있어요. 과자와 음료수를 하나씩 고르는 방법은 모두 몇 가지일까요?`,
+     `집에서 학교까지 가는 길이 ${a}개, 학교에서 도서관까지 가는 길이 ${b}개 있어요. 집에서 학교를 지나 도서관까지 가는 방법은 모두 몇 가지일까요?`][t];
+   return M(q,ans,[a+b,ans+1,ans-1,ans+2,ans-2,ans+a,ans+b].filter(v=>v>0),{hint:`첫 번째를 하나 고를 때마다 두 번째는 ${b}가지씩! ${a} × ${b}`,sum:`${a}가지 × ${b}가지 → ${ans}`,key:t+'-'+a+'-'+b});
+ }},
+ /* ===== 3학년 ===== */
+ {id:'g3-perimeter',g:3,grp:GEO,name:'둘레 구하기',badge:'▭',ex:'가로 8cm, 세로 5cm',q:'네 변의 길이를 모두 더해요.',gen:()=>{
+   if(Math.random()<.6){
+     const a=R(5,16),b=R(3,a-1),ans=2*(a+b);
+     const svg=`<svg class="fig" viewBox="0 0 250 130" role="img" aria-label="가로 ${a}cm 세로 ${b}cm 직사각형"><rect x="20" y="26" width="160" height="80"/><text x="100" y="18" text-anchor="middle">${a} cm</text><text x="190" y="72">${b} cm</text></svg>`;
+     return M(`가로 ${a} cm, 세로 ${b} cm인 직사각형의 둘레는 몇 cm일까요?`,ans,[a+b,a*b,2*a+b,a+2*b,ans+2,ans-2].filter(v=>v>0),{visual:svg,hint:'(가로 + 세로) × 2 로 구할 수 있어요.',sum:`가로 ${a}, 세로 ${b} 직사각형의 둘레 → ${ans}`});
+   }
+   const s=R(3,15),ans=4*s;
+   const svg=`<svg class="fig" viewBox="0 0 250 130" role="img" aria-label="한 변이 ${s}cm인 정사각형"><rect x="75" y="30" width="80" height="80"/><text x="115" y="22" text-anchor="middle">${s} cm</text></svg>`;
+   return M(`한 변이 ${s} cm인 정사각형의 둘레는 몇 cm일까요?`,ans,[s*s,2*s,3*s,ans+s,ans-s,s+4].filter(v=>v>0),{visual:svg,hint:'정사각형은 네 변의 길이가 모두 같아요.',sum:`한 변 ${s}인 정사각형의 둘레 → ${ans}`});
+ }},
+ {id:'g3-circle',g:3,grp:GEO,name:'원의 반지름과 지름',badge:'○',ex:'반지름 5cm → 지름?',q:'반지름과 지름의 관계를 생각해요.',gen:()=>{
+   const r=R(2,12),d=2*r;
+   if(Math.random()<.5){
+     const svg=`<svg class="fig" viewBox="0 0 250 130" role="img" aria-label="반지름 ${r}cm인 원"><circle cx="70" cy="65" r="52"/><line x1="70" y1="65" x2="122" y2="65"/><circle class="dot" cx="70" cy="65" r="4"/><text x="132" y="70">반지름 ${r} cm</text></svg>`;
+     return M(`반지름이 ${r} cm인 원의 지름은 몇 cm일까요?`,d,[r,d+2,d-2,r*r,r+2,3*r].filter(v=>v>0),{visual:svg,hint:'지름은 반지름의 2배예요.',sum:`반지름 ${r}cm → 지름 ${d}`});
+   }
+   const svg=`<svg class="fig" viewBox="0 0 250 130" role="img" aria-label="지름 ${d}cm인 원"><circle cx="70" cy="65" r="52"/><line x1="18" y1="65" x2="122" y2="65"/><circle class="dot" cx="70" cy="65" r="4"/><text x="132" y="70">지름 ${d} cm</text></svg>`;
+   return M(`지름이 ${d} cm인 원의 반지름은 몇 cm일까요?`,r,[d,r+1,r-1,r+2,r-2,d*2].filter(v=>v>0),{visual:svg,hint:'반지름은 지름의 반이에요.',sum:`지름 ${d}cm → 반지름 ${r}`});
+ }},
+ {id:'g3-algebra',g:3,grp:ALG,name:'그림 식',badge:'🍎',ex:'🍎 + 🍎 + 🍌 = 17',q:'같은 그림은 같은 수예요.',gen:()=>{
+   const [e,e2]=shuffle(EMO).slice(0,2),t=R(0,2);
+   if(t===0){const a=R(2,12),b=find(()=>R(2,12),x=>x!==a),askA=Math.random()<.5,s=2*a+b,u=a+b;
+     return M(`${askA?e:e2}에 알맞은 수를 골라요.`,askA?a:b,near(askA?a:b,1),{visual:eqHTML(`${e} + ${e} + ${e2} = ${s}<br>${e} + ${e2} = ${u}`),hint:`두 식을 비교해 봐요. ${s}는 ${u}보다 얼마나 클까요?`,key:rnd(),sum:`${e}+${e}+${e2}=${s}, ${e}+${e2}=${u} → ${askA?`${e}=${a}`:`${e2}=${b}`}`});}
+   if(t===1){const k=R(2,9),a=R(3,12),b=R(2,12);
+     return M(`${e2}에 알맞은 수를 골라요.`,b,near(b,1),{visual:eqHTML(`${e} × ${k} = ${a*k}<br>${e} + ${e2} = ${a+b}`),hint:`먼저 ${e}를 구해요. ${a*k} ÷ ${k} = ?`,key:rnd(),sum:`${e}×${k}=${a*k}, ${e}+${e2}=${a+b} → ${b}`});}
+   const a=R(2,9),b=R(2,12);
+   return M(`${e2}에 알맞은 수를 골라요.`,b,near(b,1),{visual:eqHTML(`${e} × ${e} = ${a*a}<br>${e} + ${e2} = ${a+b}`),hint:`같은 수를 두 번 곱해서 ${a*a}가 되는 수를 찾아 ${e}를 구해요.`,key:rnd(),sum:`${e}×${e}=${a*a}, ${e}+${e2}=${a+b} → ${b}`});
+ }},
+ {id:'g3-table',g:3,grp:ALG,name:'입력과 출력 규칙',badge:'⇒',ex:'입력 × 3 = 출력',q:'규칙을 찾아 빈칸을 채워요.',gen:()=>{
+   const t=R(0,2),k=R(2,9),kk=R(2,4),j=R(1,5),idx=shuffle([1,2,3,4,5,6,7,8,9]).slice(0,4).sort((a,b)=>a-b);
+   let xs,ys,hint;
+   if(t===0){xs=idx;ys=xs.map(x=>x*k);hint=`입력 × ${k} = 출력`;}
+   else if(t===1){xs=idx;ys=xs.map(x=>x*kk+j);hint=`입력 × ${kk} + ${j} = 출력`;}
+   else{xs=idx.map(q=>q*k);ys=idx;hint=`입력 ÷ ${k} = 출력`;}
+   const ans=ys[3];
+   return M('규칙을 찾아 ?에 알맞은 수를 골라요.',ans,[ans+1,ans-1,ans+2,ans-2,ans+j,xs[3]].filter(v=>v>0),{visual:tblHTML(xs,ys),hint,key:rnd(),sum:`입력 ${xs.join(', ')} → 출력 ${ys.slice(0,3).join(', ')}, ${ans}`});
+ }},
+ {id:'g3-average',g:3,grp:AVG,name:'평균 구하기',badge:'≈',ex:'70, 80, 90점의 평균',q:'평균은 모두 더해서 개수로 나눠요.',gen:()=>{
+   if(Math.random()<.6){
+     const n=R(3,5),m=R(10,40);
+     const vals=find(()=>{const a=Array.from({length:n-1},()=>m+R(-8,8));a.push(n*m-a.reduce((x,y)=>x+y,0));return a;},a=>a.every(v=>v>=1&&v<=99)&&new Set(a).size>1);
+     return M(`${n}명의 퀴즈 점수가 다음과 같아요. 점수의 평균은 몇 점일까요?`,m,near(m,1,[1,-1,2,-2,3,-3,5,-5]),{visual:barsHTML(vals),hint:'점수를 모두 더한 다음, 사람 수로 나누어요.',key:rnd(),sum:`점수 ${vals.join(', ')}의 평균 → ${m}`});
+   }
+   const m=R(70,90),[a,b,c]=find(()=>[R(60,100),R(60,100),R(60,100)],p=>{const x=4*m-p[0]-p[1]-p[2];return x>=50&&x<=100;}),ans=4*m-a-b-c;
+   return M(`4명의 점수 평균이 ${m}점이에요. 세 명의 점수가 ${a}점, ${b}점, ${c}점일 때 나머지 한 명의 점수는 몇 점일까요?`,ans,near(ans,1,[1,-1,2,-2,5,-5,10,-10]),{hint:`(전체 합) = (평균) × 4 = ${4*m}`,sum:`평균 ${m}, 세 명 ${a}, ${b}, ${c} → ${ans}`});
+ }},
+ {id:'g3-probability',g:3,grp:PRB,name:'확률을 분수로',badge:'½',ex:'빨간 공 3개 / 전체 8개',q:'(그 색 공의 수) / (전체 공의 수)',gen:()=>{
+   const idx=shuffle([0,1,2,3,4]).slice(0,3),cnt=[R(1,5),R(1,5),R(1,4)],t=cnt[0]+cnt[1]+cnt[2],k=R(0,2),n=cnt[k],nm=COL[idx[k]][2];
+   const balls=idx.flatMap((ci,j)=>rep(COL[ci][0],cnt[j]));
+   const ans=`${n}/${t}`;
+   return M(`주머니에서 공을 한 개 꺼낼 때, ${nm} 공이 나올 확률을 분수로 나타내면 얼마일까요?`,ans,[`${t-n}/${t}`,`${n}/${t-n}`,`${n+1}/${t}`,`${n+2}/${t}`,`${n}/${t+1}`,`${n}/${t+2}`,`${n+3}/${t}`],{mix:true,visual:ballsHTML(balls),hint:`${nm} 공은 ${n}개, 전체 공은 ${t}개예요.`,key:rnd(),sum:`${nm} 공 ${n}개 / 전체 ${t}개 → ${ans}`});
+ }},
+ {id:'g3-cases',g:3,grp:PRB,name:'경우의 수',badge:'#',ex:'주사위 · 동전 · 줄 서기',q:'가능한 경우를 빠짐없이 세어요.',gen:()=>{
+   const t=R(0,4);
+   if(t===0){const D=[['짝수',3],['홀수',3],['3보다 큰 수',3],['2 이하의 수',2],['4 이상의 수',3],['5 이상의 수',2]],[nm,ans]=pick(D);
+     return M(`주사위를 한 번 던질 때 ${nm}가 나오는 경우는 모두 몇 가지일까요?`,ans,near(ans,1,[1,-1,2,-2,3,-3]),{hint:'주사위의 눈은 1, 2, 3, 4, 5, 6이에요.',sum:`주사위에서 ${nm} → ${ans}`});}
+   if(t===1)return M('동전 2개를 동시에 던질 때 나올 수 있는 모양은 모두 몇 가지일까요? (그림면, 숫자면)',4,[2,3,5,6,8],{hint:'(그림, 그림) (그림, 숫자) (숫자, 그림) (숫자, 숫자)',sum:'동전 2개의 경우 → 4'});
+   if(t===2)return M('세 사람이 한 줄로 서는 방법은 모두 몇 가지일까요?',6,[3,4,5,8,9,12],{hint:'첫째 자리 3명, 둘째 자리 2명, 마지막 자리 1명이에요. 3 × 2 × 1',sum:'세 사람이 줄 서기 → 6'});
+   if(t===3){const k=R(3,4),ans=k*(k-1),list=Array.from({length:k},(_,i)=>i+1).join(', ');
+     return M(`수 카드가 ${k}장 있어요 (${list}). 이 중 2장을 골라 만들 수 있는 두 자리 수는 모두 몇 개일까요?`,ans,[ans-2,ans+2,ans-1,ans+1,ans+3,k*2],{hint:`십의 자리에 올 수 ${k}가지, 일의 자리에는 남은 ${k-1}가지예요.`,sum:`카드 ${k}장 중 2장으로 두 자리 수 → ${ans}`});}
+   const a=R(2,5),b=R(2,5),ans=a*b;
+   return M(`아이스크림 맛이 ${a}가지, 콘이 ${b}가지 있어요. 맛과 콘을 하나씩 고르는 방법은 모두 몇 가지일까요?`,ans,[a+b,ans+1,ans-1,ans+2,ans+a,ans+b].filter(v=>v>0),{hint:`${a} × ${b}를 계산해요.`,sum:`맛 ${a}가지 × 콘 ${b}가지 → ${ans}`,key:'ic-'+a+'-'+b});
+ }}
+];
+UNITS.push(...LOGIC,...MATHX);
+const GRADE_DESC={1:'10과 20 안에서 수와 셈을 시작해요.',2:'두 자리 수 계산과 곱셈구구를 익혀요.',3:'세 자리 수, 곱셈, 나눗셈, 분수에 도전해요.'};
+function buildSet(u,n=10){
+  const out=[],seen=new Set();
+  for(let i=0;i<800&&out.length<n;i++){const p=u.gen(),k=p.key||p.sum;if(!seen.has(k)){seen.add(k);out.push(p);}}
+  while(out.length<n)out.push(u.gen());
+  return out;
+}
+/* ===UI=== */
+const $=s=>document.querySelector(s);
+const KEY='semsem-stars-v1';
+const loadStars=()=>{try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return {};}};
+const saveStar=(id,n)=>{try{const s=loadStars();if((s[id]||0)<n){s[id]=n;localStorage.setItem(KEY,JSON.stringify(s));}}catch(e){}};
+const S={n:20,grade:1,unit:null,probs:[],i:0,slots:[],cur:0,step:1,tries:0,res:[],locked:false,done:false};
 
-  <div id="instructions">마우스 드래그: 360° 전방위 둘러보기 • 휠 스크롤: 시야 줌 • 천체에 커서 올리기: 정보 확인</div>
+function mascot(){
+  return `<svg class="mascot" viewBox="0 0 100 100" aria-hidden="true">
+  <line class="m-line" x1="50" y1="12" x2="50" y2="28"/>
+  <circle class="m-line m-ball" cx="50" cy="11" r="7"/>
+  <rect class="m-line m-body" x="14" y="26" width="72" height="62" rx="28"/>
+  <g class="calm-only"><circle class="m-eye" cx="38" cy="54" r="5"/><circle class="m-eye" cx="62" cy="54" r="5"/></g>
+  <g class="happy-only"><path class="m-mouth" d="M32 56 Q38 47 44 56"/><path class="m-mouth" d="M56 56 Q62 47 68 56"/></g>
+  <g class="sad-only"><path class="m-mouth" d="M32 52 Q38 58 44 52"/><path class="m-mouth" d="M56 52 Q62 58 68 52"/></g>
+  <circle class="m-cheek" cx="29" cy="67" r="5"/><circle class="m-cheek" cx="71" cy="67" r="5"/>
+  <path class="m-mouth calm-only" d="M42 67 Q50 75 58 67"/>
+  <path class="m-mouth m-open happy-only" d="M41 65 Q50 82 59 65 Z"/>
+  <path class="m-mouth sad-only" d="M42 73 Q50 65 58 73"/>
+</svg>`;
+}
+function show(id){
+  for(const s of ['home','play','result'])$('#'+s).hidden=s!==id;
+  window.scrollTo(0,0);
+}
+function mood(el,m){
+  const svg=el.querySelector('.mascot');svg.classList.remove('happy','sad');
+  if(m){void svg.getBoundingClientRect();svg.classList.add(m);}
+}
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+/* ---- 홈 ---- */
+function renderHome(){
+  const stars=loadStars();
+  $('#total').textContent=Object.values(stars).reduce((a,b)=>a+b,0);
+  $('#tabs').innerHTML=[1,2,3].map(g=>`<button type="button" class="tab g${g}${g===S.grade?' on':''}" data-tab="${g}" aria-pressed="${g===S.grade}"><b>${g}</b><span>학년</span></button>`).join('');
+  $('#gdesc').textContent=GRADE_DESC[S.grade];
+  $('#nsel').className='nsel g'+S.grade;
+  $('#nsel').innerHTML='<span>문제 수</span>'+[10,20,30,50].map(n=>`<button type="button" class="nbtn${n===S.n?' on':''}" data-n="${n}" aria-pressed="${n===S.n}">${n}문제</button>`).join('');
+  const list=UNITS.filter(u=>u.g===S.grade),groups=[];
+  list.forEach(u=>{let g=groups.find(x=>x.n===u.grp);if(!g)groups.push(g={n:u.grp,u:[]});g.u.push(u);});
+  $('#units').innerHTML=groups.map(g=>`<h2 class="gh">${g.n}</h2><div class="ugrid g${S.grade}">${g.u.map(u=>{
+    const s=stars[u.id]||0;
+    return `<button type="button" class="ucard" data-unit="${u.id}"><span class="badge${u.badge.length>1?' sm':''}">${u.badge}</span><span><span class="uname">${u.name}</span><span class="uex">${u.ex}</span><span class="ustars" aria-label="별 ${s}개">${[1,2,3].map(i=>`<i class="${i<=s?'on':''}">★</i>`).join('')}</span></span></button>`;}).join('')}</div>`).join('');
+}
 
-    // =========================================================
-    // 1. 관측자 위치 설정 (경기도 성남시 / 서울 인근)
-    // =========================================================
-    const OBSERVER_LAT = 37.42;
-    const OBSERVER_LON = 127.12;
-    const OBSERVER_ELEV = 120;
-    const SKY_RADIUS = 950;
+/* ---- 풀이 ---- */
+const slotBtn=i=>`<button type="button" class="slot" data-i="${i}" aria-label="${i+1}번째 칸"></button>`;
+function startUnit(id){
+  S.unit=UNITS.find(u=>u.id===id);S.probs=buildSet(S.unit,S.n);S.i=0;S.res=[];
+  show('play');renderProblem();
+}
+function renderProgress(){
+  if(S.probs.length>20){
+    const d=S.res.filter(Boolean).length;
+    $('#prog').innerHTML=`<div class="bar"><i style="width:${Math.round(d/S.probs.length*100)}%"></i></div>`;
+  }else $('#prog').innerHTML=S.probs.map((_,i)=>{const r=S.res[i];const c=r==='first'?'ok':r==='second'?'mid':r==='fail'?'bad':i===S.i?'now':'';return `<i class="seg ${c}"></i>`;}).join('');
+  $('#count').textContent=`${S.i+1} / ${S.probs.length}`;
+}
+function renderProblem(){
+  const p=S.probs[S.i];
+  S.tries=0;S.locked=false;S.done=false;
+  const n=(p.layout==='c'||p.layout==='m')?0:String(p.ans).length;
+  S.step=p.layout==='v'?-1:1;
+  S.slots=Array(n).fill('');S.cur=S.step<0?n-1:0;
+  let body='';
+  if(p.layout==='h'){
+    const sl=`<span class="slots">${Array.from({length:n},(_,i)=>slotBtn(i)).join('')}</span>`;
+    body=`${p.visual}<div class="expr">${p.tpl.replace('{S}',sl).replace(/([+−×÷])/g,'<span class="op">$1</span>')}</div>`;
+  }else if(p.layout==='v'){
+    const A=String(p.a),B=String(p.b),cols=Math.max(A.length,B.length,n);
+    const row=s=>Array.from({length:cols},(_,i)=>{const j=i-(cols-s.length);return `<span class="vc">${j>=0?s[j]:''}</span>`;}).join('');
+    const ansRow=Array.from({length:cols},(_,i)=>i<cols-n?'<span class="vc"></span>':slotBtn(i-(cols-n))).join('');
+    body=`<div class="vgrid" style="--n:${cols}"><span class="vc"></span>${row(A)}<span class="vc op">${p.op}</span>${row(B)}<span class="vline"></span><span class="vc"></span>${ansRow}</div>`;
+  }else if(p.layout==='m'){
+    body=`<div class="mq">${p.q}</div>${p.visual}`;
+  }else{
+    body=`<div class="cmp"><span>${p.l}</span><span class="mid" id="mid">?</span><span>${p.r}</span></div>`;
+  }
+  $('#stage').innerHTML=body;
+  $('#hintbox').innerHTML=p.hint?`<button type="button" class="hintbtn" id="hintBtn">힌트 보기</button>`:'';
+  $('#inputArea').innerHTML=p.layout==='m'?`<div class="opts">${p.opts.map((o,i)=>`<button type="button" class="opt" data-v="${o}"><b>${circ[i]}</b><span>${/^\d+\/\d+$/.test(o)?frac(...o.split('/')):o}</span></button>`).join('')}</div>`:p.layout==='c'
+    ?`<div class="choices">${[['>','왼쪽이 커요'],['=','같아요'],['<','오른쪽이 커요']].map(([s,t])=>`<button type="button" class="choice" data-v="${s}"><b>${s==='>'?'&gt;':s==='<'?'&lt;':s}</b><small>${t}</small></button>`).join('')}</div>`
+    :`<div class="keypad">${[1,2,3,4,5,6,7,8,9].map(d=>`<button type="button" class="key" data-k="${d}">${d}</button>`).join('')}<button type="button" class="key bk" data-k="bk" aria-label="지우기">⌫ 지우기</button><button type="button" class="key" data-k="0">0</button><button type="button" class="key go" data-k="ok" id="okKey">확인</button></div>`;
+  $('#nextbar').hidden=true;
+  $('#bubble').textContent=S.unit.q;
+  $('#playMascot').innerHTML=mascot();
+  renderProgress();paint();
+}
+function paint(){
+  document.querySelectorAll('#stage .slot').forEach((el,i)=>{
+    el.textContent=S.slots[i]||'';
+    el.classList.toggle('active',!S.locked&&i===S.cur);
+  });
+  const ok=$('#okKey');
+  if(ok)ok.disabled=S.locked||!S.slots.length||S.slots.some(x=>!x);
+}
+function press(d){
+  if(S.locked||!S.slots.length)return;
+  S.slots[S.cur]=d;
+  const nx=S.cur+S.step;if(nx>=0&&nx<S.slots.length)S.cur=nx;
+  paint();
+}
+function back(){
+  if(S.locked||!S.slots.length)return;
+  if(S.slots[S.cur])S.slots[S.cur]='';
+  else{const pv=S.cur-S.step;if(pv>=0&&pv<S.slots.length){S.cur=pv;S.slots[pv]='';}}
+  paint();
+}
+const PRAISE=['정답이에요!','잘했어요!','대단해요!','멋져요!','최고예요!','딱 맞았어요!'];
+const RETRY=['앗, 다시 한 번 해볼까요?','거의 다 왔어요! 한 번 더!','괜찮아요, 천천히 다시!'];
+function submit(val){
+  if(S.locked||S.done)return;
+  const p=S.probs[S.i];
+  if(String(val)===String(p.ans)){
+    S.res[S.i]=S.tries===0?'first':'second';
+    settle('ok');
+  }else{
+    S.tries++;
+    if(S.tries>=2){S.res[S.i]='fail';settle('reveal');}
+    else wrong(val);
+  }
+}
+function wrong(val){
+  const p=S.probs[S.i];
+  S.locked=true;
+  $('#bubble').textContent=pick(RETRY);mood($('#playMascot'),'sad');
+  if(p.layout==='c'||p.layout==='m'){
+    const wb=document.querySelector(`#inputArea [data-v="${val}"]`);
+    wb?.classList.add('bad');wb?.setAttribute('disabled','');
+    setTimeout(()=>{S.locked=false;},350);
+  }else{
+    document.querySelectorAll('#stage .slot').forEach(el=>el.classList.add('bad'));
+    paint();
+    setTimeout(()=>{
+      S.slots=S.slots.map(()=>'');S.cur=S.step<0?S.slots.length-1:0;S.locked=false;
+      document.querySelectorAll('#stage .slot').forEach(el=>el.classList.remove('bad'));
+      paint();
+    },750);
+  }
+}
+function settle(kind){
+  const p=S.probs[S.i];
+  S.locked=true;S.done=true;
+  if(p.layout==='c'||p.layout==='m'){
+    if(p.layout==='c'){const mid=$('#mid');mid.textContent=p.ans;mid.classList.add('done');}
+    document.querySelectorAll('#inputArea [data-v]').forEach(b=>{b.setAttribute('disabled','');if(b.dataset.v===p.ans)b.classList.add('ok');});
+  }else{
+    if(kind==='reveal')S.slots=String(p.ans).split('');
+    document.querySelectorAll('#stage .slot').forEach(el=>{el.classList.remove('active','bad');el.classList.add(kind==='ok'?'ok':'reveal');});
+    paint();
+    document.querySelectorAll('#stage .slot').forEach(el=>el.classList.remove('active'));
+    $('#inputArea').innerHTML='';
+  }
+  if(p.layout==='c')$('#inputArea').querySelectorAll('.choice').forEach(b=>b.blur());
+  $('#bubble').textContent=kind==='ok'?pick(PRAISE):`정답은 ${p.layout==='m'?p.ansText:p.ans}이에요. 다음엔 맞힐 수 있어요!`;
+  mood($('#playMascot'),kind==='ok'?'happy':'sad');
+  $('#nextBtn').textContent=S.i===S.probs.length-1?'결과 보기 →':'다음 문제 →';
+  $('#nextbar').hidden=false;
+  renderProgress();
+  $('#nextBtn').focus({preventScroll:true});
+}
+function next(){
+  if(S.i>=S.probs.length-1)return finish();
+  S.i++;renderProblem();
+}
 
-    const observer = new Astronomy.Observer(OBSERVER_LAT, OBSERVER_LON, OBSERVER_ELEV);
-    let baseDate = new Date();
-    let hourOffset = 0;
+/* ---- 결과 ---- */
+function finish(){
+  const f=S.res.filter(r=>r==='first').length,s2=S.res.filter(r=>r==='second').length;
+  const pr=(f+s2*.5)/S.probs.length,stars=pr>=.9?3:pr>=.7?2:pr>=.5?1:0;
+  saveStar(S.unit.id,stars);
+  const msg=['괜찮아요. 다시 도전해 봐요!','좋아요! 조금만 더 연습해요.','아주 잘했어요!','완벽해요! 수학 박사님!'][stars];
+  const miss=S.probs.map((p,i)=>({p,r:S.res[i]})).filter(x=>x.r!=='first');
+  $('#result').innerHTML=`<div class="rcard g${S.unit.g}">
+    <div class="confetti" id="confetti" aria-hidden="true"></div>
+    <div id="rMascot"></div>
+    <h2>${msg}</h2>
+    <div class="rstars" aria-label="별 ${stars}개">${[1,2,3].map(i=>`<i class="${i<=stars?'on':''}">★</i>`).join('')}</div>
+    <p class="rsum">${S.unit.name} · 한 번에 맞힌 문제 ${f} / ${S.probs.length}${s2?` · 다시 풀어서 맞힌 문제 ${s2}`:''}</p>
+    ${miss.length?`<ul class="review" aria-label="다시 볼 문제">${miss.map(x=>`<li><span>${x.p.sum}</span><em>${x.r==='second'?'다시 풀어서 맞힘':'정답 확인'}</em></li>`).join('')}</ul>`:''}
+    <div class="rbtns"><button type="button" class="big" id="again">한 번 더 풀기</button><button type="button" class="big alt" id="toHome">단원 고르기</button></div>
+  </div>`;
+  show('result');
+  $('#rMascot').innerHTML=mascot();mood($('#rMascot'),stars>=2?'happy':stars===0?'sad':'');
+  if(stars>=2){
+    const cols=['var(--sun)','var(--mint)','var(--sky)','var(--coral)'];
+    $('#confetti').innerHTML=Array.from({length:30},(_,i)=>`<i style="left:${R(2,98)}%;background:${cols[i%4]};animation-delay:${(Math.random()*.9).toFixed(2)}s"></i>`).join('');
+  }
+}
 
-    // =========================================================
-    // 2. THREE.JS 씬 & 360도 1인칭 카메라 설정
-    // =========================================================
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0a101d, 0.0014);
+/* ---- 이벤트 ---- */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.tab){S.grade=+t.dataset.tab;renderHome();}
+  else if(t.dataset.n){S.n=+t.dataset.n;renderHome();}
+  else if(t.dataset.unit)startUnit(t.dataset.unit);
+  else if(t.dataset.k!==undefined){
+    const k=t.dataset.k;
+    if(k==='bk')back();else if(k==='ok'){if(!t.disabled)submit(S.slots.join(''));}else press(k);
+  }
+  else if(t.dataset.i!==undefined){if(!S.locked){S.cur=+t.dataset.i;paint();}}
+  else if(t.dataset.v)submit(t.dataset.v);
+  else if(t.id==='hintBtn'){
+    const p=S.probs[S.i];
+    $('#hintbox').innerHTML=`<p class="hinttext"><b>힌트</b> ${p.hint}</p>`;
+  }
+  else if(t.id==='nextBtn')next();
+  else if(t.id==='quit'||t.id==='toHome'){renderHome();show('home');}
+  else if(t.id==='again')startUnit(S.unit.id);
+});
+document.addEventListener('keydown',e=>{
+  if($('#play').hidden)return;
+  if(e.key>='0'&&e.key<='9'&&!e.ctrlKey&&!e.metaKey){press(e.key);}
+  else if(e.key==='Backspace'){e.preventDefault();back();}
+  else if(e.key==='Enter'){
+    if(e.target.closest&&e.target.closest('#nextbar'))return;
+    e.preventDefault();
+    if(S.done)next();
+    else if(S.slots.length&&S.slots.every(x=>x))submit(S.slots.join(''));
+  }
+});
+$('#homeMascot').innerHTML=mascot();
+renderHome();
+</script>
 
-    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2200);
-    // 언덕 꼭대기 눈높이 위치
-    camera.position.set(0, 6.8, 0.1);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
-    document.body.appendChild(renderer.domElement);
-
-    // 360도 자유 회전 (카메라 위치 중심 회전)
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 6.9, 0); // 카메라 바로 앞을 타겟으로 두어 제자리에서 360도 회전
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.rotateSpeed = -0.45; // 1인칭 시점처럼 드래그 방향과 시선 일치
-    controls.enableZoom = false;   // 줌은 FOV(화각) 조절로 구현하여 360도 시점 유지
-    controls.enablePan = false;
-    controls.minPolarAngle = 0.05; // 천정(하늘 꼭대기)까지 볼 수 있음
-    controls.maxPolarAngle = Math.PI * 0.54; // 발밑 언덕 능선까지 볼 수 있음
-
-    // 마우스 휠로 망원경처럼 화각(FOV) 줌 인/아웃 (25° ~ 85°)
-    window.addEventListener('wheel', (e) => {
-      camera.fov = THREE.MathUtils.clamp(camera.fov + e.deltaY * 0.03, 25, 85);
-      camera.updateProjectionMatrix();
-    }, { passive: true });
-
-    // =========================================================
-    // 3. 육안 느낌의 글로우(빛번짐) 텍스처 생성기
-    // =========================================================
-    function createGlowTexture(innerColor, midColor, outerColor) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 128;
-      canvas.height = 128;
-      const ctx = canvas.getContext('2d');
-      const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-      grad.addColorStop(0.0, innerColor);
-      grad.addColorStop(0.25, midColor);
-      grad.addColorStop(0.6, outerColor);
-      grad.addColorStop(1.0, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 128, 128);
-      return new THREE.CanvasTexture(canvas);
-    }
-
-    const starGlowTex = createGlowTexture(
-      'rgba(255, 255, 255, 1.0)',
-      'rgba(255, 250, 235, 0.55)',
-      'rgba(180, 210, 255, 0.12)'
-    );
-    const sunGlowTex = createGlowTexture(
-      'rgba(255, 255, 240, 1.0)',
-      'rgba(255, 220, 130, 0.65)',
-      'rgba(255, 160, 50, 0.15)'
-    );
-    const moonGlowTex = createGlowTexture(
-      'rgba(255, 255, 255, 0.95)',
-      'rgba(210, 225, 245, 0.45)',
-      'rgba(150, 180, 220, 0.08)'
-    );
-
-    // =========================================================
-    // 4. 탁 트인 언덕 지형 & 방위 표식(동/서/남/북)
-    // =========================================================
-    function createHillTerrain() {
-      const geo = new THREE.PlaneGeometry(800, 800, 120, 120);
-      geo.rotateX(-Math.PI / 2);
-
-      const pos = geo.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i);
-        const z = pos.getZ(i);
-        const dist = Math.sqrt(x * x + z * z);
-
-        // 중앙 언덕 정상에서 사방으로 완만하게 내려가는 구릉 지형
-        const hillHeight = 5.2 * Math.exp(-(dist * dist) / (2 * 70 * 70));
-        const rolling = Math.sin(x * 0.025) * Math.cos(z * 0.025) * 1.6;
-        pos.setY(i, hillHeight + rolling);
-      }
-      geo.computeVertexNormals();
-
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0x162b1e,
-        roughness: 0.95,
-        metalness: 0.02,
-      });
-      const mesh = new THREE.Mesh(geo, mat);
-      scene.add(mesh);
-    }
-    createHillTerrain();
-
-    // 동서남북(N, E, S, W) 지평선 방위 표식 스프라이트
-    const compassGroup = new THREE.Group();
-    scene.add(compassGroup);
-
-    function addCompassLabel(text, azDeg, color = '#94a3b8') {
-      const canvas = document.createElement('canvas');
-      canvas.width = 128; canvas.height = 64;
-      const ctx = canvas.getContext('2d');
-      ctx.font = 'bold 28px Pretendard, sans-serif';
-      ctx.fillStyle = color;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, 64, 32);
-
-      const tex = new THREE.CanvasTexture(canvas);
-      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.75 }));
-      const pos = altAzToVector3(1.5, azDeg, 180);
-      sprite.position.copy(pos);
-      sprite.scale.set(16, 8, 1);
-      compassGroup.add(sprite);
-    }
-    addCompassLabel('북 (N)', 0, '#f87171');
+</body></html>
