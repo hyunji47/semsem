@@ -647,6 +647,11 @@ button.tier.on .em{display:inline-block;animation:stkHint 2.4s ease-in-out infin
 .fx-orbit .stk-p{left:50%;top:50%;animation:stkOrbit 4s linear infinite;animation-delay:calc(var(--i)*-4s/var(--n))}
 @keyframes stkOrbit{from{transform:translate(-50%,-50%) rotate(0) translateX(92px) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg) translateX(92px) rotate(-360deg)}}
 @media (prefers-reduced-motion:reduce){.stk-stage .stk-m,.stk-stage .stk-p,.dolphin::after,button.tier.on .em,.stkbox{animation:none!important}.stk-p{display:none}}
+.ptiles.mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.ptiles.mini .stat b{font-size:1.4rem}
+.panelbox h4.sub{font:1rem/1.2 var(--font-d);margin:12px 0 6px;color:var(--soft)}
+.plist.rec li span:last-child{color:var(--soft);font-size:.85rem}
+.plist.rec li b{font:1rem/1.2 var(--font-d)}
 </style>
 
 <div class="wrap">
@@ -1214,7 +1219,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 /* ===== 저장: 이 기기(localStorage) + 공유 DB(다른 기기와 동기화) · 프로필별로 따로 저장 ===== */
 const DBK='semsem-v2',CFGK='semsem-cfg-v1',PREFK='semsem-pref-v1',PROFK='semsem-profiles-v1',ACTK='semsem-active-v1';
 const lk=(base,pid)=>pid==='main'?base:base+':'+pid;
-const defaultDB=()=>({grade:0,start:'',earned:0,spent:0,hw:{},stars:{},ustat:{},goal:{name:'',cost:100},redeemed:[],prog:null,pracDay:{d:'',c:0},t:0});
+const defaultDB=()=>({grade:0,start:'',earned:0,spent:0,hw:{},stars:{},ustat:{},goal:{name:'',cost:100},redeemed:[],prog:null,pracDay:{d:'',c:0},prac:[],t:0});
 const DB=defaultDB(),CFG=defaultCfg(),PREF={sfx:true,bgm:true};
 const PROF={list:{main:{n:''}},o:['main'],t:0};
 let PID='main',KIDP='main',KIDCHOSEN=false;
@@ -1917,7 +1922,8 @@ function finishPractice(){
   if((DB.stars[S.unit.id]||0)<stars)DB.stars[S.unit.id]=stars;
   /* 연습 코인: 10문제 1코인 · 30문제 3코인 · 50문제 5코인 (끝까지 풀면) */
   const pd=DB.pracDay.d===key?DB.pracDay.c:0,earn=Math.floor(total/10);
-  DB.pracDay={d:key,c:pd+earn};DB.earned+=earn;save();
+  DB.pracDay={d:key,c:pd+earn};DB.earned+=earn;
+  DB.prac=[{d:key,u:S.unit.id,n:total,f,s:s2,c:earn,t:Date.now()}].concat(DB.prac||[]).slice(0,100);save();
   const nt=tiersBetween(e0,DB.earned);
   play(nt.length?'fin3':'fin'+stars);if(earn)setTimeout(()=>play(nt.length?'sticker':'coin'),800);
   $('#result').innerHTML=`<div class="rcard g${DB.grade}"><div class="confetti" id="confetti" aria-hidden="true"></div><div id="rMascot"></div>
@@ -1983,9 +1989,26 @@ function pStat(){
   const weak=order.map(u=>({u,st:ustat(u.id)})).filter(x=>x.st.n>=5&&x.st.rate<.7).sort((a,b)=>a.st.rate-b.st.rate).slice(0,3);
   const weakBox=weak.length?`<div class="panelbox warn"><h3>먼저 챙겨 주세요</h3><ul class="plist">${weak.map(x=>`<li><b>${x.u.name}</b> · 한 번에 맞힘 ${Math.round(x.st.rate*100)}% (최근 ${x.st.n}문제)</li>`).join('')}</ul><p class="pnote">‘진도 · 난이도 · 문항 설정’에서 이 단원을 ‘많이’로 바꾸면 숙제에 더 자주 나와요.</p></div>`:'';
   const recent=Object.keys(DB.hw).sort().reverse().slice(0,7).map(k=>{const r=DB.hw[k];return `<li><span>${dateLabel(k)}</span><span>${r.f}/${r.t} · 별 ${r.st}개${r.sec?` · ${Math.max(1,Math.round(r.sec/60))}분`:''} · +${CI}${r.c+r.b}</span></li>`;}).join('');
-  return `${tiles}
-  <div class="pgrid">
+  /* 코인·연습 현황 */
+  const E=DB.earned,hwC=Object.values(DB.hw).reduce((s,r)=>s+(r.c||0)+(r.b||0),0),prC=Math.max(0,E-hwC),pr=DB.prac||[];
+  const sd=k=>{const d=fromKey(k);return `${d.getMonth()+1}/${d.getDate()}`;};
+  const nxT=TIERS.find(t=>t[0]>E),goal=DB.goal&&DB.goal.name&&DB.goal.name.trim()?DB.goal:null;
+  const coinBox=`<div class="panelbox"><h3>코인 현황<small>모은 ${CI} ${E}개</small></h3><ul class="plist rec">
+    <li><span>쓸 수 있는 코인</span><b>${CI} ${balance()}개</b></li>
+    <li><span>숙제로 번 코인</span><b>${CI} ${hwC}개</b></li>
+    <li><span>연습으로 번 코인</span><b>${CI} ${prC}개</b></li>
+    <li><span>쓴 코인</span><b>${CI} ${DB.spent}개</b></li></ul>
+    <p class="pnote">스티커 ${stickerCount()} / ${TIERS.length}개${nxT?` · 다음 스티커 ${nxT[1]} ${nxT[2]}까지 ${CI} ${nxT[0]-E}개`:' · 모두 모았어요!'}${goal?`<br>보상 목표: <b>${esc(goal.name)}</b> (${CI} ${Math.min(balance(),goal.cost)} / ${goal.cost}개)`:''}</p></div>`;
+  const wk0=addDays(key,-6),pn7=pr.filter(x=>x.d>=wk0).length,pnT=pr.filter(x=>x.d===key).length;
+  const cnt={};pr.forEach(x=>{cnt[x.u]=(cnt[x.u]||0)+1;});
+  const topU=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([u,c])=>{const un=unitById(u);return `<li><span>${esc(un?un.name:u)}</span><b>${c}번</b></li>`;}).join('');
+  const prRecent=pr.slice(0,8).map(x=>{const un=unitById(x.u);return `<li><span>${sd(x.d)} · ${esc(un?un.name:x.u)}</span><span>${x.n}문제 중 ${x.f}개 한 번에${x.c?` · +${CI} ${x.c}`:''}</span></li>`;}).join('');
+  const pracBox=`<div class="panelbox"><h3>연습 기록<small>끝까지 푼 연습</small></h3>
+    <div class="ptiles mini"><div class="stat"><small>전체</small><b>${pr.length}번</b></div><div class="stat"><small>오늘</small><b>${pnT}번</b></div><div class="stat"><small>최근 7일</small><b>${pn7}번</b></div></div>
+    ${pr.length?`${topU?`<h4 class="sub">자주 한 단원</h4><ul class="plist rec">${topU}</ul>`:''}<h4 class="sub">최근 연습</h4><ul class="plist rec">${prRecent}</ul>`:'<p class="pnote">아직 연습 기록이 없어요. 아이가 연습을 끝까지 풀면 어떤 단원을 몇 문제 풀었는지 여기에 쌓여요. (이 기능 이후의 연습부터 기록돼요)</p>'}</div>`;
+  return `${tiles}\n  <div class="pgrid">
   <div class="panelbox"><h3>지금 숙제 설정</h3><p class="pnote" style="margin:0">${g}학년 · ${curMonth()}월 진도: <b>${esc(PACE[g][plan.idx].t)}</b><br>난이도 <b>${LV_NAME[plan.lv]}</b>${li.auto?` (자동${li.rate==null?'':' · 최근 '+li.n+'일 한 번에 맞힘 '+Math.round(li.rate*100)+'%'})`:''} · 연산 ${plan.cnt.calc} · 사고력 ${plan.cnt.logic} · 도형/대수/확률 ${plan.cnt.other}</p></div>
+  ${coinBox}${pracBox}
   ${chart}${weakBox}
   <div class="panelbox"><h3>영역별 한 번에 맞힘<small>단원별 최근 40문제 기준</small></h3>${catRows}</div>
   <div class="panelbox"><h3>최근 숙제 기록</h3>${recent?`<ul class="plist rec">${recent}</ul>`:'<p class="pnote">아직 완료한 숙제가 없어요.</p>'}</div>
