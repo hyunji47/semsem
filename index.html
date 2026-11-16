@@ -655,6 +655,12 @@ button.tier.on .em{display:inline-block;animation:stkHint 2.4s ease-in-out infin
 .review{margin:14px auto 0;width:100%;max-width:440px}
 .review em{white-space:nowrap}
 .rcard .pnote{text-align:center}
+.coin2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.c2{border:3px solid var(--edge);border-radius:18px;padding:10px 8px;text-align:center;display:grid;gap:4px;justify-items:center;background:var(--paper)}
+.c2.now{background:var(--sun-t)}
+.c2 small{font:700 .85rem/1.2 var(--font-b);color:var(--soft)}
+.c2 b{display:flex;align-items:center;justify-content:center;gap:6px;font:2rem/1.1 var(--font-d)}
+.c2 b .coinic{width:30px;height:30px}
 </style>
 
 <div class="wrap">
@@ -1708,7 +1714,7 @@ function viewReward(){
   const goal=`<h3>나의 보상 목표</h3><input id="goalName" class="inp" type="text" maxlength="24" value="${esc(g.name)}" placeholder="받고 싶은 보상 (예: 아이스크림)" aria-label="보상 이름">
     <label class="goalcost"><span class="gl">필요한 ${CI}</span><select id="goalCost" class="inp">${[50,100,150,200,300,500].map(c=>`<option value="${c}"${c===g.cost?' selected':''}>${c}</option>`).join('')}</select></label>
     ${has?`<div class="pbar"><i style="width:${pg}%"></i></div>${can?`<button type="button" class="big goalbtn" data-act="redeem">${S.arm?'정말 교환할까요? 한 번 더 누르세요':'교환하기'}</button>`:`<button type="button" class="big goalbtn" disabled>${CI}${g.cost-bal} 더 모아요</button>`}`:'<p class="pnote">보상 이름을 적으면 목표가 생겨요.</p>'}`;
-  return `<div class="panelbox"><div class="balbox">${COINIC}<div><b>${bal}</b><small>쓸 수 있는 코인 · 지금까지 모은 코인 <span class="nw">${CI}${E}개</span></small></div></div>
+  return `<div class="panelbox"><div class="coin2"><div class="c2 now"><small>쓸 수 있는 코인</small><b>${COINIC}<span>${bal}</span></b></div><div class="c2 all"><small>지금까지 모은 코인</small><b>${COINIC}<span>${E}</span></b></div></div>
     <div style="margin-top:12px" class="pbar"><i style="width:${pct}%"></i></div><p class="pnote">${nx?`다음 스티커 ${nx[1]} ${nx[2]}까지 ${CI} ${nx[0]-E}개`:'스티커를 모두 모았어요!'}</p></div>
   <div class="panelbox"><h3>스티커 모음<small>${stickerCount()} / ${TIERS.length}</small></h3><p class="pnote" style="margin:0 0 10px">달성한 스티커를 눌러 보세요!</p><div class="tiers">${tiers}</div></div>
   <div class="panelbox">${goal}${hist?`<ul class="hist">${hist}</ul>`:''}</div>
