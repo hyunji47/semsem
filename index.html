@@ -1175,6 +1175,8 @@ function adoptProf(d){
   KIDCHOSEN=!!(a&&PROF.list[a]);KIDP=KIDCHOSEN?a:PROF.o[0];PID=KIDP;
   readLocal(PID);
 })();
+/* 호칭: 받침 있으면 '아', 없으면 '야' (한글 외 글자는 '야') */
+const voc=n=>{const c=String(n||'').trim().slice(-1).charCodeAt(0);return c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28?'아':'야';};
 const kidName=()=>(PROF.list[PID]&&PROF.list[PID].n)||(PID==='main'?CFG.name:'')||'';
 const profName=pid=>(PROF.list[pid]&&PROF.list[pid].n)||(pid==='main'&&PID==='main'&&CFG.name)||('아이 '+(PROF.o.indexOf(pid)+1));
 function avatarOf(pid){
@@ -1522,10 +1524,10 @@ function setTab(t,quiet){
 function viewToday(){
   const key=todayKey(),rec=DB.hw[key],P=hasProg(key)?DB.prog:null;
   const plan=P?P.plan:todayPlan(),lay=planLayout(plan),done=rec?lay.length:(P?P.stg.length:0);
-  const total=lay.length?lay[lay.length-1].to:0,nm=kidName()?esc(kidName()):'친구';
+  const total=lay.length?lay[lay.length-1].to:0,nm=kidName()?esc(kidName()):'친구',vc=voc(kidName()||'친구');
   const step=PACE[DB.grade][plan.idx];
   const inStage=P&&!rec&&done<lay.length?resArr(P.res).slice(lay[done].from,lay[done].to).filter(Boolean).length:0;
-  const greet=rec?`${nm}야, 오늘 숙제 끝! 최고야!`:done?`${nm}야, 조금만 더 힘내자!`:isRest(key)?`${nm}야, 오늘은 쉬는 날! 하고 싶으면 해도 좋아요`:`${nm}야, 오늘도 같이 풀자!`;
+  const greet=rec?`${nm}${vc}, 오늘 숙제 끝! 최고야!`:done?`${nm}${vc}, 조금만 더 힘내자!`:isRest(key)?`${nm}${vc}, 오늘은 쉬는 날! 하고 싶으면 해도 좋아요`:`${nm}${vc}, 오늘도 같이 풀자!`;
   const nodes=lay.map((L,i)=>{
     const st=i<done?'done':(i===done?'cur':'lock'),g=P&&P.stg[i];
     return `<div class="node ${st}"><span class="orb" aria-hidden="true">${st==='done'?'★':L.icon}</span><b>${i+1}판</b><small>${L.name}</small>${st==='done'&&g?`<i class="nst">${'★'.repeat(g.st)}</i>`:'<i class="nst"></i>'}</div>`;
