@@ -496,6 +496,28 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .detail{padding:10px 14px}
 .detail h3{font-size:1.1rem}
 @media (min-width:560px){.cal{max-width:520px}}
+
+/* ===== 부모님 화면: 넓은 화면 배치 ===== */
+body[data-screen="parent"] .wrap{max-width:1120px}
+#parent{display:block}
+#parent>*+*{margin-top:14px}
+#parent>.phead,#parent>.ptabs{margin-top:0}
+.pgrid{display:block}
+.pgrid>.panelbox{margin-bottom:14px;break-inside:avoid}
+.ulist2{display:grid;gap:8px}
+.panelbox.wide .ulist{gap:8px}
+@media (min-width:760px){
+  .pgrid{columns:2;column-gap:14px}
+  .ulist,.ulist2{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px}
+  .ulist2 .uo{grid-template-columns:minmax(0,1fr) auto}
+  .urow{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto auto}
+}
+@media (min-width:1180px){
+  .pgrid{columns:3}
+  .ulist,.ulist2{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .urow{grid-template-columns:minmax(0,1fr) auto}
+  .urow .ur{grid-column:1/-1;order:3}
+}
 </style>
 
 <div class="wrap">
@@ -1759,11 +1781,13 @@ function pStat(){
   const weakBox=weak.length?`<div class="panelbox warn"><h3>먼저 챙겨 주세요</h3><ul class="plist">${weak.map(x=>`<li><b>${x.u.name}</b> · 한 번에 맞힘 ${Math.round(x.st.rate*100)}% (최근 ${x.st.n}문제)</li>`).join('')}</ul><p class="pnote">‘진도 · 난이도 · 문항 설정’에서 이 단원을 ‘많이’로 바꾸면 숙제에 더 자주 나와요.</p></div>`:'';
   const recent=Object.keys(DB.hw).sort().reverse().slice(0,7).map(k=>{const r=DB.hw[k];return `<li><span>${dateLabel(k)}</span><span>${r.f}/${r.t} · 별 ${r.st}개${r.sec?` · ${Math.max(1,Math.round(r.sec/60))}분`:''} · +${r.c+r.b}코인</span></li>`;}).join('');
   return `${tiles}
+  <div class="pgrid">
   <div class="panelbox"><h3>지금 숙제 설정</h3><p class="pnote" style="margin:0">${g}학년 · ${curMonth()}월 진도: <b>${esc(PACE[g][plan.idx].t)}</b><br>난이도 <b>${LV_NAME[plan.lv]}</b>${li.auto?` (자동${li.rate==null?'':' · 최근 '+li.n+'일 한 번에 맞힘 '+Math.round(li.rate*100)+'%'})`:''} · 연산 ${plan.cnt.calc} · 사고력 ${plan.cnt.logic} · 도형/대수/확률 ${plan.cnt.other}</p></div>
   ${chart}${weakBox}
   <div class="panelbox"><h3>영역별 한 번에 맞힘<small>단원별 최근 40문제 기준</small></h3>${catRows}</div>
-  <div class="panelbox"><h3>단원별 현황<small>학교 진도 순서</small></h3><div class="ulist">${rows}</div></div>
-  <div class="panelbox"><h3>최근 숙제 기록</h3>${recent?`<ul class="plist rec">${recent}</ul>`:'<p class="pnote">아직 완료한 숙제가 없어요.</p>'}</div>`;
+  <div class="panelbox"><h3>최근 숙제 기록</h3>${recent?`<ul class="plist rec">${recent}</ul>`:'<p class="pnote">아직 완료한 숙제가 없어요.</p>'}</div>
+  </div>
+  <div class="panelbox wide"><h3>단원별 현황<small>학교 진도 순서</small></h3><div class="ulist">${rows}</div></div>`;
 }
 function pSet(){
   const g=DB.grade;
@@ -1774,24 +1798,26 @@ function pSet(){
   const tot=CFG.counts.calc+CFG.counts.logic+CFG.counts.other;
   const unitSec=['calc','logic','other'].map(c=>{
     const w=weights(g,plan.idx,CFG,c),base=weights(g,plan.idx,Object.assign({},CFG,{units:{}}),c);
-    return `<h4>${CAT_NAME[c]}</h4>`+UNITS.filter(u=>u.g===g&&catOf(u)===c).map(u=>{
+    return `<h4>${CAT_NAME[c]}</h4><div class="ulist2">`+UNITS.filter(u=>u.g===g&&catOf(u)===c).map(u=>{
       const ov=CFG.units[u.id]||'auto',tag=base[u.id]===3?'지금 배움':base[u.id]===1?'복습':'';
       const b=(v,t)=>`<button type="button" data-uo="${v}" data-u="${u.id}" aria-pressed="${ov===v}"${dis}>${t}</button>`;
       return `<div class="uo"><div class="un"><b>${u.name}</b><small>${tag}${w[u.id]>0?' · 숙제에 나와요':' · 안 나와요'}</small></div><span class="seg3">${b('auto','기본')}${b('more','많이')}${b('off','제외')}</span></div>`;
-    }).join('');
+    }).join('')+'</div>';
   }).join('');
   const prev=['calc','logic','other'].map(c=>`<li><b>${CAT_NAME[c]} ${sumN(plan.alloc[c])}문제</b><span>${plan.alloc[c].map(x=>`${unitById(x.u).name} ${x.n}`).join(' · ')||'없음'}</span></li>`).join('');
   return `${SYNC.admin?'':'<div class="panelbox warn"><p class="pnote" style="margin:0">이 계정은 보기 전용이에요. 설정은 소유자나 편집자 계정에서만 바꿀 수 있어요.</p></div>'}
+  <div class="pgrid">
   ${pProfiles()}
   <div class="panelbox"><h3>난이도</h3><div class="seg4">${[['auto','자동'],['1','쉬움'],['2','보통'],['3','어려움']].map(([v,t])=>`<button type="button" data-lv="${v}" aria-pressed="${String(CFG.lv)===v}"${dis}>${t}</button>`).join('')}</div>
     <p class="pnote">같은 단원 안에서 숫자가 작은 문제(쉬움) 또는 큰 문제(어려움) 위주로 나와요. ‘자동’은 최근 3일 숙제에서 한 번에 맞힌 비율이 88% 이상이면 한 단계 올리고, 65% 미만이면 내려요.<br>지금 적용: <b>${LV_NAME[li.lv]}</b>${li.auto?(li.rate==null?' (기록이 없어 보통으로 시작)':` (최근 ${li.n}일 ${Math.round(li.rate*100)}%)`):''}</p></div>
   <div class="panelbox"><h3>학교 진도</h3><select id="pPace" class="inp"${dis}>${stepOpts}</select><p class="pnote">지금 배우는 단원이 숙제의 대부분을 차지하고, 앞서 배운 연산 단원은 복습으로 조금 섞여요. 진도는 교과서 단원 순서를 바탕으로 한 대략적인 시기예요. 학교 진도와 다르면 단계를 직접 고르세요.</p></div>
   <div class="panelbox"><h3>하루 문항 수<small>합계 ${tot}문제</small></h3>${cnt('calc','연산',5)}${cnt('logic','사고력',1)}${cnt('other','도형·대수·확률',1)}<p class="pnote">10문제를 한 판으로 나눠요. 연산은 쉬운 문제부터 어려운 문제 순서로 나오고, 마지막 판이 사고력·도형·대수·확률이에요.</p></div>
-  <div class="panelbox"><h3>단원별 조절</h3><p class="pnote" style="margin-top:0">‘많이’는 해당 단원을 두 배 이상, ‘제외’는 숙제에서 뺍니다.</p>${unitSec}</div>
   <div class="panelbox"><h3>이 설정으로 나올 숙제 미리보기</h3><ul class="plist prev">${prev}</ul><p class="pnote">이미 시작한 오늘 숙제는 바뀌지 않아요. 내일부터(또는 오늘 아직 시작하지 않았다면 바로) 적용돼요.</p></div>
   <div class="panelbox"><h3>부모님 화면 잠금</h3><input id="pPinIn" class="inp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="${CFG.pin?'새 번호 4자리':'번호 4자리'}" aria-label="잠금 번호"${dis}>
     <div class="rbtns" style="justify-content:flex-start"><button type="button" class="mini-btn" data-act="pinSave"${dis}>${CFG.pin?'번호 바꾸기':'잠금 켜기'}</button>${CFG.pin?`<button type="button" class="mini-btn" data-act="pinOff"${dis}>잠금 끄기</button>`:''}</div>
-    <p class="pnote">아이가 실수로 여는 것을 막는 가벼운 잠금이에요. 보안 기능은 아니니, 아이 기기는 보기 전용 권한으로 공유하는 것이 가장 안전해요.</p></div>`;
+    <p class="pnote">아이가 실수로 여는 것을 막는 가벼운 잠금이에요. 보안 기능은 아니니, 아이 기기는 ‘참여자’ 권한으로 공유하면 설정은 바꿀 수 없어요.</p></div>
+  </div>
+  <div class="panelbox wide"><h3>단원별 조절</h3><p class="pnote" style="margin-top:0">‘많이’는 해당 단원을 두 배 이상, ‘제외’는 숙제에서 뺍니다.</p>${unitSec}</div>`;
 }
 function addProfile(name){
   if(!SYNC.admin||PROF.o.length>=MAXP)return '';
