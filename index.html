@@ -1496,7 +1496,8 @@ function renderGrades(){
 const GRADE_CARD={1:'수 세기 · 10 안의 덧셈 · 뺄셈 · 규칙 찾기',2:'두 자리 수 계산 · 곱셈구구 · 도형 · 규칙과 식',3:'세 자리 수 · 곱셈 · 나눗셈 · 분수 · 평균 · 확률'};
 function toIntro(){renderIntro();show('intro');}
 function toProfiles(){renderProfiles();show('profSel');}
-function leaveParent(){if(PID!==KIDP)loadProfile(KIDP);DB.grade?enterApp():toIntro();}
+/* 부모 화면에서 보던 프로필의 아이 화면으로 이동 (이 기기의 아이 프로필도 그 프로필로 바뀜) */
+function leaveParent(){if(PID!==KIDP)setKid(PID);DB.grade?enterApp():toIntro();}
 function toGrades(){renderGrades();show('gradeSel');}
 function enterApp(tab){if(tab)setTab(tab,true);else renderApp();show('app');}
 
@@ -1840,11 +1841,11 @@ const hashPin=p=>String(hashStr('semsem-pin|'+p));
 function renderParent(){
   const el=$('#parent');
   if(CFG.pin&&!PUN){
-    el.innerHTML=`<div class="phead"><button type="button" class="quit" data-act="pExit">← 아이 화면</button><h1>부모님 화면</h1></div>
+    el.innerHTML=`<div class="phead"><button type="button" class="quit" data-act="pExit">← ${esc(profName(PID))} 화면</button><h1>부모님 화면</h1></div>
       <div class="panelbox gate"><h3>잠금 번호를 입력해 주세요</h3><input id="pGateIn" class="inp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="잠금 번호 4자리"><p class="pnote" id="pGateMsg"></p><button type="button" class="big" data-act="pGate">열기</button></div>`;
     return;
   }
-  el.innerHTML=`<div class="phead"><button type="button" class="quit" data-act="pExit">← 아이 화면</button><div><h1>부모님 화면</h1><p class="psync">${syncText()}</p></div></div>
+  el.innerHTML=`<div class="phead"><button type="button" class="quit" data-act="pExit">← ${esc(profName(PID))} 화면</button><div><h1>부모님 화면</h1><p class="psync">${syncText()}</p></div></div>
     ${PROF.o.length>1||SYNC.admin?`<div class="ptabs" aria-label="프로필">${PROF.o.map(id=>`<button type="button" data-pf="${id}" aria-pressed="${id===PID}">${avHTML(id,'xs')}${esc(profName(id))}</button>`).join('')}${SYNC.admin&&PROF.o.length<MAXP?'<button type="button" data-ptab="set" aria-label="프로필 추가">＋ 추가</button>':''}</div>`:''}
     <div class="ptabs" role="tablist"><button type="button" data-ptab="stat" aria-pressed="${S.ptab==='stat'}">아이 현황</button><button type="button" data-ptab="set" aria-pressed="${S.ptab==='set'}">진도 · 난이도 · 문항 설정</button></div>`+(S.ptab==='stat'?pStat():pSet());
 }
