@@ -372,8 +372,10 @@ body[data-screen="app"] .wrap{padding-bottom:110px}
 /* ===== v6: 아이 홈(길 따라가기) · 부모님 화면 ===== */
 .hero{display:flex;align-items:center;gap:12px}
 .hero .hm .mascot{width:84px;height:84px;animation:bob 2.4s ease-in-out infinite}
-.hbub{position:relative;flex:1;min-width:0;border:3px solid var(--edge);border-radius:20px;background:var(--card);padding:10px 14px;font:1.25rem/1.35 var(--font-d);text-wrap:balance}
-.hbub::before{content:"";position:absolute;left:-11px;top:50%;width:16px;height:16px;margin-top:-8px;background:var(--card);border-left:3px solid var(--edge);border-bottom:3px solid var(--edge);transform:rotate(45deg)}
+.hbub{position:relative;flex:1;min-width:0;border:3px solid var(--edge);border-radius:22px;margin-left:6px;background:var(--card);padding:10px 14px;font:1.25rem/1.35 var(--font-d);text-wrap:balance}
+.hbub::before,.hbub::after{content:"";position:absolute;width:0;height:0;border-style:solid;border-color:transparent;transform:none;background:none;margin:0}
+.hbub::before{left:-14px;top:50%;margin-top:-10px;border-width:10px 14px 10px 0;border-right-color:var(--edge)}
+.hbub::after{left:-9px;top:50%;margin-top:-6px;border-width:6px 10px 6px 0;border-right-color:var(--card)}
 .trail{display:flex;align-items:flex-start;justify-content:center;gap:0;padding:6px 0 2px}
 .node{flex:none;width:calc((100% - 4*14px)/5);min-width:54px;display:grid;justify-items:center;gap:2px;text-align:center}
 .node b{font:1.05rem/1.1 var(--font-d)}
