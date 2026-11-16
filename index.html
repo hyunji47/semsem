@@ -560,6 +560,7 @@ body[data-screen="parent"] .wrap{max-width:1120px}
 .coinic.ci{vertical-align:-.2em}
 .stat small{white-space:nowrap}
 @media (max-width:370px){.node{min-width:0;width:calc((100% - 4*6px)/5)}.dash{width:6px;margin-top:20px}.node .orb{width:clamp(34px,11.5vw,46px);font-size:1.3rem}.node small{font-size:.66rem}}
+.coinic.ci{vertical-align:-.05em}
 </style>
 
 <div class="wrap">
@@ -1518,7 +1519,7 @@ function viewToday(){
   <div class="hwcard"><div class="hwtop"><div><small>${dateLabel(key)}</small><h2>오늘의 숙제</h2></div><span class="gbadge">${total}문제</span></div>
     <div class="trail" aria-label="오늘의 숙제 ${lay.length}판">${nodes}</div>${cta}
     <p class="hwsum center"><span class="ln">이번에 배우는 단원</span><span class="ln"><b>${String(step.t).split(' · ').map(x=>`<span class="nw">${esc(x)}</span>`).join(' · ')}</b></span></p></div>
-  <div class="stats"><div class="stat"><span class="si">🔥</span><b>${sk}</b><small>일 연속</small></div><div class="stat"><span class="si">${COINIC}</span><b>${balance()}</b><small>내 ${CI}</small></div><div class="stat"><span class="si">🎖️</span><b>${stickerCount()}/${TIERS.length}</b><small>스티커</small></div></div>
+  <div class="stats"><div class="stat"><span class="si">🔥</span><b>${sk}</b><small>일 연속</small></div><div class="stat"><span class="si">${COINIC}</span><b>${balance()}</b><small>내 코인</small></div><div class="stat"><span class="si">🎖️</span><b>${stickerCount()}/${TIERS.length}</b><small>스티커</small></div></div>
   <div class="panelbox"><h3>이번 주 도장</h3><div class="week">${week}</div></div>
   <div class="panelbox"><h3>다음 스티커${nx?`<small>${nx[1]} ${nx[2]} · ${nx[0]}${CI}</small>`:''}</h3><div class="pbar"><i style="width:${pct}%"></i></div><p class="pnote">${nx?`${nx[0]-DB.earned}${CI}만 더 모으면 새 스티커를 받아요.`:'스티커를 모두 모았어요!'}</p></div>`;
 }
