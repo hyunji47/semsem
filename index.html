@@ -584,6 +584,69 @@ body[data-screen="parent"] .wrap{max-width:1120px}
 .avgrid{grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:12px;min-width:200px}
 .avopt{border:0;min-height:0;box-shadow:none}
 .avopt[aria-pressed="true"]{box-shadow:0 0 0 3px var(--sun),0 0 0 5px var(--edge);transform:none}
+/* sticker popup */
+button.tier{font:inherit;color:inherit;cursor:pointer;box-shadow:0 3px 0 var(--shadow)}
+button.tier:active{transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
+button.tier.on .em{display:inline-block;animation:stkHint 2.4s ease-in-out infinite}
+@keyframes stkHint{0%,70%,100%{transform:none}80%{transform:scale(1.18) rotate(-6deg)}90%{transform:scale(1.1) rotate(6deg)}}
+.stkwrap{align-items:center;padding:16px;z-index:60}
+.stkbox{position:relative;width:min(100%,380px);background:var(--card);color:var(--ink);border:3px solid var(--edge);border-radius:26px;padding:14px;display:grid;gap:10px;text-align:center;box-shadow:0 8px 0 var(--shadow);animation:stkPop .35s cubic-bezier(.2,1.4,.4,1)}
+.stkbox h2{font:1.5rem/1.2 var(--font-d);margin:0}
+.stkbox .pnote{margin:0}
+.stkbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stkbtns .big{width:100%;font-size:1.05rem}
+@keyframes stkPop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.stk-stage{position:relative;height:230px;border:3px solid var(--edge);border-radius:20px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(#cfeaff,#f3faff)}
+.stk-m{font-size:6.2rem;line-height:1;display:block;will-change:transform;filter:drop-shadow(0 6px 4px rgba(0,0,0,.18))}
+.stk-p{position:absolute;font-size:1.5rem;line-height:1;pointer-events:none}
+/* 배경 */
+.stk-stage.candy{background:linear-gradient(#ffd6ea,#fff1f8)}
+.stk-stage.rocket{background:linear-gradient(#10163a,#2f3f93)}
+.stk-stage.unicorn{background:linear-gradient(#e6d6ff,#fff0fb)}
+.stk-stage.dolphin{background:linear-gradient(#9fdcff,#e2f6ff)}
+.stk-stage.medal{background:linear-gradient(#fff0b8,#fffbe8)}
+.stk-stage.rainbow{background:linear-gradient(#a9dcff,#effaff)}
+.stk-stage.trophy{background:linear-gradient(#ffe3b0,#fff6e2)}
+.stk-stage.crown{background:linear-gradient(#d9ccff,#f6f0ff)}
+.stk-stage.star{background:linear-gradient(#0d1233,#2b2f7a)}
+/* 본체 모션 */
+.balloon .stk-m{animation:stkFloat 2.6s ease-in-out infinite}
+.candy .stk-m{animation:stkSpin 2.8s ease-in-out infinite}
+.rocket .stk-m{animation:stkLaunch 3.4s ease-in infinite}
+.unicorn .stk-m{animation:stkGallop .9s ease-in-out infinite}
+.dolphin .stk-m{animation:stkJump 2.6s ease-in-out infinite}
+.medal .stk-m{animation:stkSwing 2.2s ease-in-out infinite;transform-origin:50% -25%}
+.rainbow .stk-m{animation:stkReveal 3.6s ease-in-out infinite}
+.trophy .stk-m{animation:stkLift 2.2s ease-in-out infinite}
+.crown .stk-m{animation:stkDrop 3.2s ease-in-out infinite}
+.star .stk-m{animation:stkStar 3s ease-in-out infinite}
+@keyframes stkFloat{0%,100%{transform:translateY(14px) rotate(-6deg)}50%{transform:translateY(-16px) rotate(6deg)}}
+@keyframes stkSpin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.22)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes stkLaunch{0%{transform:translate(0,0)}5%{transform:translate(-4px,3px)}10%{transform:translate(4px,-3px)}15%{transform:translate(-4px,-3px)}20%{transform:translate(0,0)}60%{transform:translate(130px,-200px) scale(.7);opacity:1}61%{transform:translate(-130px,200px);opacity:0}70%{opacity:1;transform:translate(-110px,170px)}100%{transform:translate(0,0)}}
+@keyframes stkGallop{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-28px) rotate(5deg)}}
+@keyframes stkJump{0%{transform:translate(-100px,55px) rotate(-60deg)}50%{transform:translate(0,-60px) rotate(0)}100%{transform:translate(100px,55px) rotate(60deg)}}
+@keyframes stkSwing{0%,100%{transform:rotate(-24deg)}50%{transform:rotate(24deg)}}
+@keyframes stkReveal{0%{clip-path:inset(0 100% 0 0);transform:scale(.85)}45%{clip-path:inset(0 0 0 0);transform:scale(1.08)}85%{clip-path:inset(0 0 0 0);transform:scale(1.08)}100%{clip-path:inset(0 0 0 100%);transform:scale(1.08)}}
+@keyframes stkLift{0%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-30px) scale(1.18) rotate(-7deg)}60%{transform:translateY(-30px) scale(1.18) rotate(7deg)}80%{transform:translateY(3px) scale(.95)}}
+@keyframes stkDrop{0%{transform:translateY(-190px) rotate(-28deg);opacity:0}15%{opacity:1}35%{transform:translateY(0) rotate(9deg)}45%{transform:translateY(-16px) rotate(-5deg)}55%{transform:translateY(0) rotate(0)}85%{transform:translateY(0) rotate(0) scale(1.06)}100%{transform:translateY(0) rotate(0) scale(1)}}
+@keyframes stkStar{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.25)}100%{transform:rotate(360deg) scale(1)}}
+/* 입자 */
+.fx-rise .stk-p{left:var(--x);bottom:-30px;font-size:1.7rem;animation:stkRise 3.4s linear infinite;animation-delay:calc(var(--i)*-.7s)}
+@keyframes stkRise{0%{transform:translateY(0) rotate(-8deg);opacity:0}15%{opacity:1}100%{transform:translateY(-270px) rotate(10deg);opacity:0}}
+.fx-burst .stk-p{left:50%;top:50%;--a:calc(var(--i)*360deg/var(--n));animation:stkBurst 2.2s ease-out infinite;animation-delay:calc(var(--i)*.28s)}
+@keyframes stkBurst{0%{transform:translate(-50%,-50%) rotate(var(--a)) translateX(10px) scale(.3);opacity:0}20%{opacity:1}100%{transform:translate(-50%,-50%) rotate(var(--a)) translateX(105px) scale(1.1);opacity:0}}
+.fx-fall .stk-p{left:calc(36% + var(--i)*7%);top:56%;animation:stkFall 1.3s ease-out infinite;animation-delay:calc(var(--i)*.22s)}
+@keyframes stkFall{0%{transform:translateY(0) scale(.5);opacity:0}20%{opacity:1}100%{transform:translateY(120px) scale(1.5);opacity:0}}
+.fx-bubble .stk-p{left:var(--x);bottom:24px;font-size:1.3rem;animation:stkRise 2.6s ease-in infinite;animation-delay:calc(var(--i)*-.5s)}
+.dolphin::after{content:"🌊🌊🌊🌊🌊🌊";position:absolute;left:-14px;bottom:-8px;font-size:2.2rem;letter-spacing:.05em;white-space:nowrap;animation:stkWave 1.5s ease-in-out infinite alternate}
+@keyframes stkWave{from{transform:translateX(0)}to{transform:translateX(-18px)}}
+.fx-twinkle .stk-p{left:var(--x);top:var(--y);animation:stkTwinkle 1.6s ease-in-out infinite;animation-delay:calc(var(--i)*.3s)}
+@keyframes stkTwinkle{0%,100%{transform:scale(.2) rotate(0);opacity:0}50%{transform:scale(1.4) rotate(40deg);opacity:1}}
+.fx-drift .stk-p{top:var(--y);left:-20%;font-size:2.2rem;animation:stkDrift 7s linear infinite;animation-delay:calc(var(--i)*-2.3s)}
+@keyframes stkDrift{from{transform:translateX(0)}to{transform:translateX(480px)}}
+.fx-orbit .stk-p{left:50%;top:50%;animation:stkOrbit 4s linear infinite;animation-delay:calc(var(--i)*-4s/var(--n))}
+@keyframes stkOrbit{from{transform:translate(-50%,-50%) rotate(0) translateX(92px) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg) translateX(92px) rotate(-360deg)}}
+@media (prefers-reduced-motion:reduce){.stk-stage .stk-m,.stk-stage .stk-p,.dolphin::after,button.tier.on .em,.stkbox{animation:none!important}.stk-p{display:none}}
 </style>
 
 <div class="wrap">
@@ -649,6 +712,11 @@ body[data-screen="parent"] .wrap{max-width:1120px}
     <button type="button" class="nb" data-tab="reward"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M12 9v12M3 14h18M12 9C8 9 8 4 11 4c2 0 1 5 1 5zM12 9c4 0 4-5 1-5-2 0-1 5-1 5z"/></svg>보상</button>
   </div>
 </nav>
+
+<div id="stk" class="sheet stkwrap" hidden>
+  <button type="button" class="sheet-bg" data-act="closeStk" aria-label="닫기"></button>
+  <div class="stkbox" role="dialog" aria-label="스티커" id="stkBox"></div>
+</div>
 
 <div id="sheet" class="sheet" hidden>
   <button type="button" class="sheet-bg" data-act="closeSheet" aria-label="닫기"></button>
@@ -1596,10 +1664,36 @@ function viewCal(){
   <div class="stats"><div class="stat"><b>${doneN}</b><small>이달 완료</small></div><div class="stat"><b>${coins}</b><small>이달 숙제 코인</small></div><div class="stat"><b>${streakNow()}</b><small>연속 일수</small></div></div>
   ${dayDetail(S.sel||todayKey())}`;
 }
+
+/* ===== 스티커 모션 팝업 ===== */
+const STK=[
+ {k:'balloon',fx:'rise',p:['🎈','🎈','🎈','🎈','🎈'],msg:'둥실둥실 하늘로 떠올라요!'},
+ {k:'candy',fx:'burst',p:['✨','🍬','✨','🍬','✨','🍬'],msg:'빙글빙글 달콤하게 돌아요!'},
+ {k:'rocket',fx:'fall',p:['💨','💨','💨','🔥','💨'],msg:'부릉부릉 우주로 발사!'},
+ {k:'unicorn',fx:'burst',p:['⭐','✨','🌈','⭐','✨','🌈'],msg:'반짝반짝 신나게 달려요!'},
+ {k:'dolphin',fx:'bubble',p:['🫧','🫧','🫧','🫧','🫧'],msg:'첨벙! 파도를 넘어 점프해요!'},
+ {k:'medal',fx:'twinkle',p:['✨','✨','✨','✨','✨'],msg:'반짝이는 금메달이 흔들려요!'},
+ {k:'rainbow',fx:'drift',p:['☁️','☁️','☁️'],msg:'구름 사이로 무지개가 활짝!'},
+ {k:'trophy',fx:'burst',p:['🎉','✨','🎊','✨','🎉','🎊'],msg:'우승! 트로피를 번쩍 들어요!'},
+ {k:'crown',fx:'twinkle',p:['✨','💎','✨','💎','✨'],msg:'왕관이 사뿐히 내려앉아요!'},
+ {k:'star',fx:'orbit',p:['⭐','✨','⭐','✨','⭐','✨'],msg:'별빛이 빙글빙글 돌아요!'}
+];
+function openSticker(i){
+  const t=TIERS[i];if(!t||t[0]>DB.earned)return;
+  const c=STK[i],n=c.p.length,ys=[22,68,34,62,26,56];
+  const parts=c.p.map((e,j)=>`<span class="stk-p" style="--i:${j};--n:${n};--x:${Math.round(12+j*(76/Math.max(1,n-1)))}%;--y:${ys[j%ys.length]}%" aria-hidden="true">${e}</span>`).join('');
+  S.stk=i;
+  $('#stkBox').innerHTML=`<div class="stk-stage ${c.k} fx-${c.fx}" aria-hidden="true"><span class="stk-m">${t[1]}</span>${parts}</div>
+    <h2>${t[1]} ${t[2]}</h2><p class="pnote">${CI} ${t[0]}개 달성! ${c.msg}</p>
+    <div class="stkbtns"><button type="button" class="big alt" data-act="stkAgain">다시 보기</button><button type="button" class="big" data-act="closeStk" id="stkClose">닫기</button></div>`;
+  const w=$('#stk');w.hidden=false;play('sticker');
+  const b=$('#stkClose');if(b)b.focus({preventScroll:true});
+}
+function closeStk(){const w=$('#stk');if(w)w.hidden=true;}
 function viewReward(){
   const bal=balance(),E=DB.earned,nx=TIERS.find(t=>t[0]>E),pv=[...TIERS].reverse().find(t=>t[0]<=E),lo=pv?pv[0]:0;
   const pct=nx?Math.round((E-lo)/(nx[0]-lo)*100):100;
-  const tiers=TIERS.map(t=>{const ok=t[0]<=E;return `<div class="tier${ok?'':' lock'}"><span class="em" aria-hidden="true">${t[1]}</span><b>${ok?t[2]:'???'}</b><small>${CI}${t[0]}${ok?' 달성':''}</small></div>`;}).join('');
+  const tiers=TIERS.map((t,i)=>{const ok=t[0]<=E;return `<${ok?'button type="button" data-stk="'+i+'" aria-label="'+t[2]+' 스티커 보기"':'div'} class="tier${ok?' on':' lock'}"><span class="em" aria-hidden="true">${t[1]}</span><b>${ok?t[2]:'???'}</b><small>${CI}${t[0]}${ok?' 달성':''}</small></${ok?'button':'div'}>`;}).join('');
   const g=DB.goal,has=g.name&&g.name.trim();
   const pg=has?Math.min(100,Math.round(bal/g.cost*100)):0,can=has&&bal>=g.cost;
   const hist=(DB.redeemed||[]).slice(0,5).map(r=>`<li>${dateLabel(r.d)} · ${esc(r.n)} (−${CI}${r.c})</li>`).join('');
@@ -1608,7 +1702,7 @@ function viewReward(){
     ${has?`<div class="pbar"><i style="width:${pg}%"></i></div>${can?`<button type="button" class="big goalbtn" data-act="redeem">${S.arm?'정말 교환할까요? 한 번 더 누르세요':'교환하기'}</button>`:`<button type="button" class="big goalbtn" disabled>${CI}${g.cost-bal} 더 모아요</button>`}`:'<p class="pnote">보상 이름을 적으면 목표가 생겨요.</p>'}`;
   return `<div class="panelbox"><div class="balbox">${COINIC}<div><b>${bal}</b><small>쓸 수 있는 코인 · 지금까지 모은 코인 <span class="nw">${CI}${E}개</span></small></div></div>
     <div style="margin-top:12px" class="pbar"><i style="width:${pct}%"></i></div><p class="pnote">${nx?`다음 스티커 ${nx[1]} ${nx[2]}까지 ${CI} ${nx[0]-E}개`:'스티커를 모두 모았어요!'}</p></div>
-  <div class="panelbox"><h3>스티커 모음<small>${stickerCount()} / ${TIERS.length}</small></h3><div class="tiers">${tiers}</div></div>
+  <div class="panelbox"><h3>스티커 모음<small>${stickerCount()} / ${TIERS.length}</small></h3><p class="pnote" style="margin:0 0 10px">달성한 스티커를 눌러 보세요!</p><div class="tiers">${tiers}</div></div>
   <div class="panelbox">${goal}${hist?`<ul class="hist">${hist}</ul>`:''}</div>
   <p class="note">${CI}은 숙제를 끝내면 10개, 연습은 10문제 1개, 30문제 3개, 50문제 5개씩 쌓여요.</p>`;
 }
@@ -1962,6 +2056,7 @@ document.addEventListener('click',e=>{
   if(!AU.ctx){audio();if(PREF.bgm)bgmStart();}
   const act=t.dataset.act;
   if(t.dataset.tab){setTab(t.dataset.tab);}
+  else if(t.dataset.stk!==undefined){openSticker(+t.dataset.stk);}
   else if(t.dataset.av){if(SYNC.admin){setAvatar(PID,t.dataset.av);S.avMsg='';renderParent();play('tap');}}
   else if(t.dataset.pf){
     if(document.body.dataset.screen==='parent'){S.delArm='';loadProfile(t.dataset.pf);renderParent();}
@@ -1997,6 +2092,8 @@ document.addEventListener('click',e=>{
   else if(act){
     switch(act){
       case 'start':play('start');if(PROF.o.length>1&&!KIDCHOSEN)toProfiles();else DB.grade?enterApp('today'):toGrades();break;
+      case 'stkAgain':openSticker(S.stk);break;
+      case 'closeStk':closeStk();break;
       case 'avPhoto':{const f=$('#avFile');if(f)f.click();break;}
       case 'avClear':if(SYNC.admin){setAvatar(PID,'');S.avMsg='';renderParent();}break;
       case 'toProfiles':closeSheet();play('tap');toProfiles();break;
@@ -2085,6 +2182,7 @@ document.addEventListener('change',e=>{
   else if(id==='pPace'){CFG.pace=e.target.value;cfgChanged();}
 });
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&$('#stk')&&!$('#stk').hidden){closeStk();return;}
   if(e.key==='Escape'&&!$('#sheet').hidden){closeSheet();return;}
   if(e.key==='Enter'&&e.target&&e.target.id==='pGateIn'){e.preventDefault();const b=document.querySelector('[data-act="pGate"]');if(b)b.click();return;}
   if($('#play').hidden||!$('#sheet').hidden)return;
