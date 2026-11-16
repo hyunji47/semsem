@@ -1,5 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>셈셈 수학 놀이터</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><title>셈셈 수학 놀이터</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700&display=swap">
 <style>
@@ -454,6 +453,27 @@ select.inp{appearance:auto}
   .catrow{grid-template-columns:6em minmax(0,1fr) 3em}
 }
 @media (prefers-reduced-motion:reduce){.hero .hm .mascot,.node.cur .orb{animation:none}}
+
+/* ===== 완료 화면: 겹침 · 줄바꿈 · 반응형 ===== */
+body{word-break:keep-all;overflow-wrap:break-word}
+.rcard>*:not(.confetti){position:relative;z-index:1}
+.confetti{z-index:0}
+.rcard .rsum{line-height:1.5;text-wrap:balance}
+.earn{overflow:hidden}
+.earn .amt{line-height:1.3;flex-wrap:wrap;row-gap:4px;min-height:44px}
+.earn.small .amt{min-height:36px}
+.earn ul{margin-top:12px;gap:4px}
+.earn li{line-height:1.45}
+.earn .newsticker{line-height:1.4;overflow-wrap:anywhere}
+.earn>*+*{position:relative}
+.rstars{flex-wrap:nowrap}
+@media (max-width:380px){
+  .rcard h2{font-size:1.6rem}
+  .rstars{font-size:2.6rem}
+  .earn{padding:10px 10px}
+  .earn .amt{font-size:2rem}
+  .earn .amt .coinic{width:36px;height:36px;font-size:1.1rem}
+}
 </style>
 
 <div class="wrap">
@@ -1281,7 +1301,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)bgmStop();e
 
 /* ===== 공통 UI ===== */
 const ICON={gear:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>'};
-const S={tab:'today',ptab:'stat',n:20,mode:'practice',unit:null,hwKey:'',all:[],lay:[],stage:0,base:0,probs:[],i:0,slots:[],cur:0,step:1,tries:0,res:[],locked:false,done:false,calY:0,calM:0,sel:'',arm:false,tick:0};
+const S={tab:'today',ptab:'stat',n:10,mode:'practice',unit:null,hwKey:'',all:[],lay:[],stage:0,base:0,probs:[],i:0,slots:[],cur:0,step:1,tries:0,res:[],locked:false,done:false,calY:0,calM:0,sel:'',arm:false,tick:0};
 const SCREENS=['intro','gradeSel','profSel','app','play','result','parent'];
 function show(id){
   SCREENS.forEach(s=>{$('#'+s).hidden=s!==id;});
@@ -1365,7 +1385,7 @@ function viewToday(){
   }).join('<span class="dash" aria-hidden="true"></span>');
   const cta=rec
     ?`<div class="donebox"><span class="tick">✓</span><div><b>오늘 숙제를 끝냈어요!</b><small>코인 +${rec.c+rec.b} · 별 ${'★'.repeat(rec.st)}${'☆'.repeat(3-rec.st)}</small></div></div><button type="button" class="big alt" data-tab="practice">자유 연습하러 가기</button>`
-    :`<button type="button" class="big go" data-act="hw">${done?`${done+1}판 이어서 하기!`:'1판 시작!'}</button><p class="hwsum center">${inStage?`${done+1}판은 ${inStage}문제까지 풀었어요. `:''}쉬었다가 이어서 해도 괜찮아요.</p>`;
+    :`<button type="button" class="big go" data-act="hw">${done?`${done+1}판 이어서 하기!`:'1판 시작!'}</button><p class="hwsum center">${inStage?`${done+1}판은 ${inStage}문제까지 풀었어요. `:''}쉬었다가 이어서 해도 괜찮아요. 다 끝내면 10코인!</p>`;
   const sk=streakNow(),nx=TIERS.find(t=>t[0]>DB.earned),pv=[...TIERS].reverse().find(t=>t[0]<=DB.earned),lo=pv?pv[0]:0;
   const pct=nx?Math.round((DB.earned-lo)/(nx[0]-lo)*100):100;
   const d=fromKey(key),wk=Array.from({length:7},(_,i)=>addDays(key,i-d.getDay()));
@@ -1389,9 +1409,9 @@ function viewPractice(){
   const nowUnits=now.map(unitById).filter(u=>u&&u.g===DB.grade);
   const rest=UNITS.filter(u=>u.g===DB.grade&&!now.includes(u.id)),groups=[];
   rest.forEach(u=>{let g=groups.find(x=>x.n===u.grp);if(!g)groups.push(g={n:u.grp,u:[]});g.u.push(u);});
-  const nsel='<div class="nsel"><span>문제 수</span>'+[10,20,30,50].map(n=>`<button type="button" class="nbtn${n===S.n?' on':''}" data-n="${n}" aria-pressed="${n===S.n}">${n}문제</button>`).join('')+'</div>';
+  const nsel='<div class="nsel"><span>문제 수</span>'+[10,30,50].map(n=>`<button type="button" class="nbtn${n===S.n?' on':''}" data-n="${n}" aria-pressed="${n===S.n}">${n}문제 · ${n/10}코인</button>`).join('')+'</div>';
   const pd=DB.pracDay.d===todayKey()?DB.pracDay.c:0;
-  return `<p class="gdesc" style="margin:0">연습으로도 코인이 조금씩 쌓여요. 오늘 연습 코인 ${pd}/20 (숙제보다 적게 쌓여요)</p>${nsel}
+  return `<p class="gdesc" style="margin:0">연습을 끝까지 풀면 코인이 쌓여요. 10문제 1코인 · 30문제 3코인 · 50문제 5코인 (오늘 연습 코인 ${pd})</p>${nsel}
     <div><h2 class="gh">지금 배우는 단원</h2><div class="ugrid">${nowUnits.map(unitCard).join('')}</div></div>`+
     groups.map(g=>`<div><h2 class="gh">${g.n}</h2><div class="ugrid">${g.u.map(unitCard).join('')}</div></div>`).join('');
 }
@@ -1437,7 +1457,7 @@ function viewReward(){
     <div style="margin-top:12px" class="pbar"><i style="width:${pct}%"></i></div><p class="pnote">${nx?`다음 스티커 ${nx[1]} ${nx[2]}까지 ${nx[0]-E}코인`:'스티커를 모두 모았어요!'}</p></div>
   <div class="panelbox"><h3>스티커 모음<small>${stickerCount()} / ${TIERS.length}</small></h3><div class="tiers">${tiers}</div></div>
   <div class="panelbox">${goal}${hist?`<ul class="hist">${hist}</ul>`:''}</div>
-  <p class="note">코인은 숙제로 많이, 연습으로 조금 쌓여요. 별을 많이 받거나 며칠 연속으로 하면 보너스가 있어요.</p>`;
+  <p class="note">코인은 숙제를 끝내면 10코인, 연습은 10문제 1코인 · 30문제 3코인 · 50문제 5코인씩 쌓여요.</p>`;
 }
 
 
@@ -1448,7 +1468,6 @@ function renderSheet(){
    <div class="srow"><span>배경음</span><button type="button" class="sw" data-act="bgm" aria-pressed="${PREF.bgm}">${PREF.bgm?'켜짐':'꺼짐'}</button></div>
    <button type="button" class="big alt" data-act="changeGrade">학년 바꾸기 (지금 ${DB.grade||'-'}학년)</button>
    ${PROF.o.length>1?`<button type="button" class="big alt" data-act="toProfiles">프로필 바꾸기 (지금 ${esc(profName(PID))})</button>`:''}
-   <button type="button" class="big alt" data-act="toParent">부모님 화면</button>
    <p class="pnote sheetsync">${syncText()}</p>
    <button type="button" class="big" data-act="closeSheet">닫기</button>`;
 }
@@ -1606,15 +1625,15 @@ const starsRow=n=>`<div class="rstars" aria-label="별 ${n}개">${[1,2,3].map(i=
 const missList=(items)=>items.length?`<ul class="review" aria-label="다시 볼 문제">${items.slice(0,8).map(x=>`<li><span>${x.p.sum}</span><em>${x.r==='second'?'다시 풀어서 맞힘':'정답 확인'}</em></li>`).join('')}</ul>${items.length>8?`<p class="pnote">그 밖에 ${items.length-8}문제가 더 있어요.</p>`:''}`:'';
 function finishStage(){
   const P=DB.prog,L=S.lay[S.stage],sl=resArr(P.res).slice(L.from,L.to);
-  const f=sl.filter(r=>r==='first').length,s2=sl.filter(r=>r==='second').length,stars=starsOf(f,s2,sl.length),c=3,e0=DB.earned;
-  P.stg[S.stage]={st:stars,f,s:s2,n:sl.length,c};DB.earned+=c;save();
+  const f=sl.filter(r=>r==='first').length,s2=sl.filter(r=>r==='second').length,stars=starsOf(f,s2,sl.length),c=0;
+  P.stg[S.stage]={st:stars,f,s:s2,n:sl.length,c};save();
   if(S.stage>=S.lay.length-1)return completeDay();
-  const nx=S.lay[S.stage+1],nt=tiersBetween(e0,DB.earned);
-  play('fin'+Math.max(1,stars));setTimeout(()=>play(nt.length?'sticker':'coin'),700);
+  const nx=S.lay[S.stage+1];
+  play('fin'+Math.max(1,stars));
   $('#result').innerHTML=`<div class="rcard"><div class="confetti" id="confetti" aria-hidden="true"></div><div id="rMascot"></div>
     <h2>${S.stage+1}판 클리어!</h2>${starsRow(stars)}
     <p class="rsum">${L.name} · 한 번에 맞힌 문제 ${f} / ${sl.length}</p>
-    <div class="earn small"><div class="amt"><span class="coinic">★</span>+${c}</div>${nt.map(t=>`<div class="newsticker">새 스티커! ${t[1]} ${t[2]}</div>`).join('')}</div>
+    <p class="pnote">숙제를 다 끝내면 10코인을 받아요! (${S.stage+1}/${S.lay.length}판 완료)</p>
     <div class="rbtns"><button type="button" class="big go" data-act="nextStage">${S.stage+2}판 가기 · ${nx.name}</button><button type="button" class="big alt" data-act="resHome">오늘은 여기까지</button></div></div>`;
   show('result');
   $('#rMascot').innerHTML=mascot();mood($('#rMascot'),stars>=2?'happy':'');
@@ -1624,8 +1643,8 @@ function completeDay(){
   const P=DB.prog,key=P.key,all=hwProblems(DB.grade,key,P.plan),rs=resArr(P.res),total=rs.length;
   const f=rs.filter(r=>r==='first').length,s2=rs.filter(r=>r==='second').length,stars=starsOf(f,s2,total);
   DB.hw[key]={g:DB.grade,f,s:s2,t:total,st:stars,c:0,b:0,sec:Math.round(P.sec),stg:P.stg.length};
-  const sk=streakFrom(key),stageCoins=P.stg.reduce((a,x)=>a+(x?x.c:0),0),base=10,starBonus=stars*5,bonus=sk%7===0?30:sk%3===0?10:0;
-  DB.hw[key].c=stageCoins+base+starBonus;DB.hw[key].b=bonus;DB.earned+=base+starBonus+bonus;
+  const sk=streakFrom(key),base=10;
+  DB.hw[key].c=base;DB.hw[key].b=0;DB.earned+=base;
   const nt=tiersBetween(P.e0,DB.earned),sec=Math.round(P.sec);
   DB.prog=null;save();
   const miss=all.map((p,i)=>({p,r:rs[i]})).filter(x=>x.r!=='first');
@@ -1634,8 +1653,8 @@ function completeDay(){
   $('#result').innerHTML=`<div class="rcard"><div class="confetti" id="confetti" aria-hidden="true"></div><div id="rMascot"></div>
     <h2>${msg}</h2>${starsRow(stars)}
     <p class="rsum">오늘의 숙제 ${total}문제 · 한 번에 맞힌 문제 ${f} / ${total}${s2?` · 다시 풀어서 맞힌 문제 ${s2}`:''}${sec?` · 약 ${Math.max(1,Math.round(sec/60))}분`:''}</p>
-    <div class="earn"><div class="amt"><span class="coinic">★</span>+${DB.hw[key].c+bonus}</div>
-      <ul><li>판 클리어 +${stageCoins}</li><li>숙제 완료 +${base}</li>${starBonus?`<li>별 ${'★'.repeat(stars)} 보너스 +${starBonus}</li>`:''}${bonus?`<li>${sk}일 연속 보너스 +${bonus}</li>`:''}<li>${sk}일째 연속 숙제 · 내 코인 ${balance()}</li></ul>
+    <div class="earn"><div class="amt"><span class="coinic">★</span>+${base}</div>
+      <ul><li>숙제 완료 +${base}</li><li>${sk}일째 연속 숙제 · 내 코인 ${balance()}</li></ul>
       ${nt.map(t=>`<div class="newsticker">새 스티커! ${t[1]} ${t[2]}</div>`).join('')}</div>
     ${missList(miss)}
     <div class="rbtns"><button type="button" class="big" data-act="resCal">달력 보기</button><button type="button" class="big alt" data-act="resHome">홈으로</button></div></div>`;
@@ -1649,15 +1668,15 @@ function finishPractice(){
   const msg=['괜찮아요. 다시 도전해 봐요!','좋아요! 조금만 더 연습해요.','아주 잘했어요!','완벽해요! 수학 박사님!'][stars];
   const miss=S.probs.map((p,i)=>({p,r:S.res[i]})).filter(x=>x.r!=='first');
   if((DB.stars[S.unit.id]||0)<stars)DB.stars[S.unit.id]=stars;
-  /* 연습 코인: 한 번에 맞힌 5문제마다 1코인 + 별 2개 이상이면 1코인, 하루 20코인까지 */
-  const pd=DB.pracDay.d===key?DB.pracDay.c:0,earn=Math.max(0,Math.min(Math.floor(f/5)+(stars>=2?1:0),20-pd));
+  /* 연습 코인: 10문제 1코인 · 30문제 3코인 · 50문제 5코인 (끝까지 풀면) */
+  const pd=DB.pracDay.d===key?DB.pracDay.c:0,earn=Math.floor(total/10);
   DB.pracDay={d:key,c:pd+earn};DB.earned+=earn;save();
   const nt=tiersBetween(e0,DB.earned);
   play(nt.length?'fin3':'fin'+stars);if(earn)setTimeout(()=>play(nt.length?'sticker':'coin'),800);
   $('#result').innerHTML=`<div class="rcard g${DB.grade}"><div class="confetti" id="confetti" aria-hidden="true"></div><div id="rMascot"></div>
     <h2>${msg}</h2>${starsRow(stars)}
     <p class="rsum">${S.unit.name} · 한 번에 맞힌 문제 ${f} / ${total}${s2?` · 다시 풀어서 맞힌 문제 ${s2}`:''}</p>
-    <div class="earn small"><div class="amt"><span class="coinic">★</span>+${earn}</div><p class="pnote">${earn?'연습 코인이에요.':pd>=20?'오늘 연습 코인은 다 모았어요.':'한 번에 5문제를 맞히면 코인이 쌓여요.'} (오늘 ${DB.pracDay.c}/20)</p>${nt.map(t=>`<div class="newsticker">새 스티커! ${t[1]} ${t[2]}</div>`).join('')}</div>
+    <div class="earn small"><div class="amt"><span class="coinic">★</span>+${earn}</div><p class="pnote">${total}문제를 끝까지 풀어서 연습 코인 ${earn}개를 받았어요. (오늘 연습 코인 ${DB.pracDay.c})</p>${nt.map(t=>`<div class="newsticker">새 스티커! ${t[1]} ${t[2]}</div>`).join('')}</div>
     ${missList(miss)}
     <div class="rbtns"><button type="button" class="big" data-act="again">한 번 더 풀기</button><button type="button" class="big alt" data-act="toList">단원 고르기</button></div></div>`;
   show('result');
@@ -1911,5 +1930,4 @@ if(!route()){renderIntro();show('intro');}
 initShared();
 
 </script>
-
 </body></html>
