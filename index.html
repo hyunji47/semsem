@@ -525,6 +525,23 @@ body[data-screen="parent"] .wrap{max-width:1120px}
 .cd.today.rest{background:var(--sun-t);border-color:var(--edge)}
 .wd.rest i{background:var(--sky-t);border-style:dashed;font-size:.7rem;color:var(--soft)}
 .b14.rest i{background:var(--sky-t)}
+
+/* ===== 프로필 사진 ===== */
+.av{display:inline-grid;place-items:center;flex:none;overflow:hidden;border:3px solid var(--edge);border-radius:50%;background:var(--sky-t);line-height:1;font-size:1.6rem;width:48px;height:48px}
+.av img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:50%}
+.av.big{width:76px;height:76px;font-size:2.6rem}
+.av.lg{width:84px;height:84px;font-size:2.8rem}
+.av.head{width:54px;height:54px;font-size:1.8rem}
+.av.xs{width:26px;height:26px;border-width:2px;font-size:.95rem;vertical-align:middle}
+.ptabs button .av.xs{margin-right:6px}
+.ptabs button{display:inline-flex;align-items:center}
+.avrow{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.avgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;flex:1;min-width:210px}
+.avopt{aspect-ratio:1;border:3px solid var(--edge);border-radius:50%;font-size:1.4rem;line-height:1;display:grid;place-items:center;padding:0;min-height:40px}
+.avopt[aria-pressed="true"]{box-shadow:0 0 0 3px var(--sun);transform:scale(1.05)}
+.avopt:disabled{opacity:.5}
+.avfile{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+.gcard .av.big{border-width:3px}
 </style>
 
 <div class="wrap">
@@ -1093,7 +1110,10 @@ const defaultDB=()=>({grade:0,start:'',earned:0,spent:0,hw:{},stars:{},ustat:{},
 const DB=defaultDB(),CFG=defaultCfg(),PREF={sfx:true,bgm:true};
 const PROF={list:{main:{n:''}},o:['main'],t:0};
 let PID='main',KIDP='main',KIDCHOSEN=false;
-const MAXP=6,PEMO=['🐻','🐰','🦊','🐼','🐯','🐸'];
+const MAXP=6;
+/* 프로필 사진: 제시된 캐릭터(e0~e11) 또는 사진첩에서 고른 사진(p) */
+const AVE=['🐻','🐰','🦊','🐼','🐯','🐸','🐶','🐱','🦁','🐵','🦄','🐧'];
+const AVBG=['#FFD9A8','#FFD6E0','#FFE0B3','#E4E4EA','#FFE9A8','#C9F2C7','#F5DDB5','#FFE2C2','#FFE29A','#E6CDB8','#E6D5FF','#CFE8FF'];
 function readJSON(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}
 function applyCfg(c){const d=defaultCfg();Object.keys(CFG).forEach(k=>delete CFG[k]);Object.assign(CFG,d,c);CFG.counts=Object.assign({},d.counts,(c&&c.counts)||{});CFG.units=Object.assign({},(c&&c.units)||{});}
 function adoptProgress(d){Object.keys(DB).forEach(k=>delete DB[k]);Object.assign(DB,defaultDB(),d);delete DB.sfx;delete DB.bgm;}
@@ -1106,7 +1126,7 @@ function readLocal(pid){
 }
 function adoptProf(d){
   const list={},o=[];
-  (d.o||[]).forEach(id=>{if(d.list&&d.list[id]&&!list[id]){list[id]={n:String(d.list[id].n||'')};o.push(id);}});
+  (d.o||[]).forEach(id=>{if(d.list&&d.list[id]&&!list[id]){const x=d.list[id],a=String(x.a||''),p=a==='p'?String(x.p||''):'';list[id]=Object.assign({n:String(x.n||'')},/^e\d+$/.test(a)?{a}:(a==='p'&&p?{a,p}:{}));o.push(id);}});
   if(!o.length){list.main={n:''};o.push('main');}
   PROF.list=list;PROF.o=o;PROF.t=d.t||0;
 }
@@ -1119,6 +1139,35 @@ function adoptProf(d){
 })();
 const kidName=()=>(PROF.list[PID]&&PROF.list[PID].n)||(PID==='main'?CFG.name:'')||'';
 const profName=pid=>(PROF.list[pid]&&PROF.list[pid].n)||(pid==='main'&&PID==='main'&&CFG.name)||('아이 '+(PROF.o.indexOf(pid)+1));
+function avatarOf(pid){
+  const p=PROF.list[pid]||{},i=Math.max(0,PROF.o.indexOf(pid));
+  if(p.a==='p'&&p.p)return {img:p.p,set:true};
+  const m=/^e(\d+)$/.exec(p.a||''),k=(m?+m[1]:i)%AVE.length;
+  return {e:AVE[k],bg:AVBG[k],set:!!m};
+}
+const avHTML=(pid,cls='')=>{const a=avatarOf(pid);return a.img?`<span class="av ${cls}"><img src="${a.img}" alt=""></span>`:`<span class="av ${cls}" style="background:${a.bg}" aria-hidden="true">${a.e}</span>`;};
+function setAvatar(pid,a,p){
+  const cur=Object.assign({},PROF.list[pid]);delete cur.a;delete cur.p;
+  PROF.list[pid]=a?Object.assign(cur,a==='p'?{a,p}:{a}):cur;
+  saveProf();
+}
+/* 사진첩 사진 → 긴 변 192px, 비율 그대로 JPEG (문서 용량 제한 때문에 작게) */
+async function photoToDataURL(file){
+  let src,w,h;
+  try{src=await createImageBitmap(file,{imageOrientation:'from-image'});w=src.width;h=src.height;}
+  catch(e){
+    src=await new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=u;});
+    w=src.naturalWidth;h=src.naturalHeight;
+  }
+  if(!w||!h)throw new Error('size');
+  const k=Math.min(1,192/Math.max(w,h)),c=document.createElement('canvas');
+  c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(src,0,0,c.width,c.height);
+  let q=.82,url=c.toDataURL('image/jpeg',q);
+  while(url.length>45000&&q>.35){q-=.1;url=c.toDataURL('image/jpeg',q);}
+  if(url.length>60000)throw new Error('big');
+  return url;
+}
 const SYNC={db:null,admin:true,canWrite:true,state:'local',busy:false,timer:null,dirty:{progress:false,config:false,prof:false},seen:{progress:false,config:false,prof:false},unsub:{p:null,c:null}};
 function remoteDoc(){
   const d=JSON.parse(JSON.stringify(DB)),ks=Object.keys(d.hw).sort();
@@ -1392,7 +1441,7 @@ function mood(el,m){
 
 /* ===== 인트로 · 학년 선택 ===== */
 function renderProfiles(){
-  const cards=PROF.o.map((id,i)=>`<button type="button" class="gcard g${i%3+1}" data-pf="${id}"><span class="gnum">${PEMO[i%PEMO.length]}</span><span><b>${esc(profName(id))}${id===KIDP&&KIDCHOSEN?'<span class="now">이 기기</span>':''}</b><small>눌러서 시작해요</small></span></button>`).join('');
+  const cards=PROF.o.map((id,i)=>`<button type="button" class="gcard g${i%3+1}" data-pf="${id}">${avHTML(id,'big')}<span><b>${esc(profName(id))}${id===KIDP&&KIDCHOSEN?'<span class="now">이 기기</span>':''}</b><small>눌러서 시작해요</small></span></button>`).join('');
   const add=SYNC.admin&&PROF.o.length<MAXP?`<div class="panelbox"><h3>새 프로필</h3><input id="newProfName" class="inp" type="text" maxlength="10" placeholder="이름 (예: 민준)" aria-label="새 프로필 이름"><button type="button" class="big alt" style="margin-top:10px;width:100%" data-act="addProfKid">프로필 만들고 시작하기</button></div>`:'';
   $('#profBox').innerHTML=`${cards}${add}`;
 }
@@ -1413,7 +1462,8 @@ function enterApp(tab){if(tab)setTab(tab,true);else renderApp();show('app');}
 
 /* ===== 메인(탭) ===== */
 function renderHead(){
-  $('#appHead').innerHTML=`${mascot()}<div class="ht"><b>${kidName()?esc(kidName())+'의 ':''}수학 놀이터</b><small>${DB.grade}학년</small></div><div class="coinchip" aria-label="코인 ${balance()}개"><span class="coinic">★</span>${balance()}</div><button type="button" class="gear" data-act="sheet" aria-label="설정">${ICON.gear}</button>`;
+  const hav=avatarOf(PID);
+  $('#appHead').innerHTML=`${hav.set?avHTML(PID,'head'):mascot()}<div class="ht"><b>${kidName()?esc(kidName())+'의 ':''}수학 놀이터</b><small>${DB.grade}학년</small></div><div class="coinchip" aria-label="코인 ${balance()}개"><span class="coinic">★</span>${balance()}</div><button type="button" class="gear" data-act="sheet" aria-label="설정">${ICON.gear}</button>`;
 }
 function renderApp(){
   renderHead();
@@ -1753,7 +1803,7 @@ function renderParent(){
     return;
   }
   el.innerHTML=`<div class="phead"><button type="button" class="quit" data-act="pExit">← 아이 화면</button><div><h1>부모님 화면</h1><p class="psync">${syncText()}</p></div></div>
-    ${PROF.o.length>1||SYNC.admin?`<div class="ptabs" aria-label="프로필">${PROF.o.map(id=>`<button type="button" data-pf="${id}" aria-pressed="${id===PID}">${esc(profName(id))}</button>`).join('')}${SYNC.admin&&PROF.o.length<MAXP?'<button type="button" data-ptab="set" aria-label="프로필 추가">＋ 추가</button>':''}</div>`:''}
+    ${PROF.o.length>1||SYNC.admin?`<div class="ptabs" aria-label="프로필">${PROF.o.map(id=>`<button type="button" data-pf="${id}" aria-pressed="${id===PID}">${avHTML(id,'xs')}${esc(profName(id))}</button>`).join('')}${SYNC.admin&&PROF.o.length<MAXP?'<button type="button" data-ptab="set" aria-label="프로필 추가">＋ 추가</button>':''}</div>`:''}
     <div class="ptabs" role="tablist"><button type="button" data-ptab="stat" aria-pressed="${S.ptab==='stat'}">아이 현황</button><button type="button" data-ptab="set" aria-pressed="${S.ptab==='set'}">진도 · 난이도 · 문항 설정</button></div>`+(S.ptab==='stat'?pStat():pSet());
 }
 const ustat=id=>{const s=DB.ustat[id]||'',n=s.length,f=[...s].filter(c=>c==='f').length,sc=[...s].filter(c=>c==='s').length;return {n,f,s:sc,x:n-f-sc,rate:n?f/n:0};};
@@ -1843,6 +1893,11 @@ function pProfiles(){
   return `<div class="panelbox"><h3>프로필<small>${PROF.o.length}/${MAXP}</small></h3>
    <label class="pnote" for="pName" style="margin:0">지금 보고 있는 프로필 이름 (아이 화면 인사말에 쓰여요)</label>
    <input id="pName" class="inp" type="text" maxlength="10" value="${esc(PROF.list[PID]&&PROF.list[PID].n||'')}" placeholder="예: 민준"${dis}>
+   <div class="avpick"><p class="pnote" style="margin:12px 0 8px">프로필 사진</p>
+    <div class="avrow">${avHTML(PID,'lg')}<div class="avgrid" role="group" aria-label="캐릭터 고르기">${AVE.map((e,k)=>{const cur=PROF.list[PID]&&PROF.list[PID].a==='e'+k;return `<button type="button" class="avopt${cur?' on':''}" data-av="e${k}" aria-label="캐릭터 ${k+1}" aria-pressed="${cur}" style="background:${AVBG[k]}"${dis}>${e}</button>`;}).join('')}</div></div>
+    <div class="rbtns" style="justify-content:flex-start;margin-top:10px"><button type="button" class="mini-btn" data-act="avPhoto"${dis}>📷 사진첩에서 고르기</button>${PROF.list[PID]&&PROF.list[PID].a?'<button type="button" class="mini-btn" data-act="avClear"'+dis+'>기본으로</button>':''}</div>
+    <input id="avFile" class="avfile" type="file" accept="image/*" tabindex="-1" aria-hidden="true"${dis}>
+    <p class="pnote" id="avMsg" role="status">${S.avMsg?esc(S.avMsg):'사진은 비율 그대로, 원 안에 가운데를 맞춰 보여줘요.'}</p></div>
    ${PROF.o.length<MAXP?`<div class="frow" style="margin-top:12px"><input id="pNewName" class="inp" type="text" maxlength="10" placeholder="새 프로필 이름" aria-label="새 프로필 이름"${dis}><button type="button" class="mini-btn" data-act="addProf"${dis}>추가</button></div>`:''}
    ${PROF.o.length>1?`<button type="button" class="mini-btn" data-act="delProf"${dis} style="margin-top:10px">${S.delArm===PID?'정말 목록에서 뺄까요? 한 번 더 누르세요':'이 프로필 목록에서 빼기'}</button><p class="pnote">목록에서만 빠지고 저장된 기록은 지워지지 않아요.</p>`:''}</div>`;
 }
@@ -1862,6 +1917,7 @@ document.addEventListener('click',e=>{
   if(!AU.ctx){audio();if(PREF.bgm)bgmStart();}
   const act=t.dataset.act;
   if(t.dataset.tab){setTab(t.dataset.tab);}
+  else if(t.dataset.av){if(SYNC.admin){setAvatar(PID,t.dataset.av);S.avMsg='';renderParent();play('tap');}}
   else if(t.dataset.pf){
     if(document.body.dataset.screen==='parent'){S.delArm='';loadProfile(t.dataset.pf);renderParent();}
     else{setKid(t.dataset.pf);play('start');DB.grade?enterApp('today'):toGrades();}
@@ -1896,6 +1952,8 @@ document.addEventListener('click',e=>{
   else if(act){
     switch(act){
       case 'start':play('start');if(PROF.o.length>1&&!KIDCHOSEN)toProfiles();else DB.grade?enterApp('today'):toGrades();break;
+      case 'avPhoto':{const f=$('#avFile');if(f)f.click();break;}
+      case 'avClear':if(SYNC.admin){setAvatar(PID,'');S.avMsg='';renderParent();}break;
       case 'toProfiles':closeSheet();play('tap');toProfiles();break;
       case 'addProfKid':{
         const v=(($('#newProfName')||{}).value||'').trim().slice(0,10);
@@ -1970,6 +2028,13 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const id=e.target.id;
+  if(id==='avFile'){
+    const f=e.target.files&&e.target.files[0];if(!f||!SYNC.admin)return;
+    if(!/^image\//.test(f.type)){S.avMsg='이미지 파일을 골라 주세요.';renderParent();return;}
+    S.avMsg='사진을 줄이는 중…';const m=$('#avMsg');if(m)m.textContent=S.avMsg;
+    photoToDataURL(f).then(url=>{setAvatar(PID,'p',url);S.avMsg='';renderParent();}).catch(()=>{S.avMsg='이 사진은 쓸 수 없어요. 다른 사진을 골라 주세요.';renderParent();});
+    return;
+  }
   if(id==='goalCost'){DB.goal.cost=+e.target.value;S.arm=false;save();renderApp();}
   else if(id==='pName'&&SYNC.admin){const v=e.target.value.trim().slice(0,10);PROF.list[PID]=Object.assign({},PROF.list[PID],{n:v});saveProf();renderParent();}
   else if(id==='pPace'){CFG.pace=e.target.value;cfgChanged();}
