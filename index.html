@@ -656,6 +656,26 @@ button.tier.on .em{display:inline-block;animation:stkHint 2.4s ease-in-out infin
 .c2 small{font:700 .85rem/1.2 var(--font-b);color:var(--soft)}
 .c2 b{display:flex;align-items:center;justify-content:center;gap:6px;font:2rem/1.1 var(--font-d)}
 .c2 b .coinic{width:30px;height:30px}
+/* ===== 테마 (프로필별) ===== */
+.thdeco{position:absolute;left:0;right:0;bottom:100%;display:none;justify-content:space-between;align-items:flex-end;padding:0 max(14px,env(safe-area-inset-left,0px));pointer-events:none;height:0}
+html[data-th] .thdeco{display:flex}
+.thdeco svg{width:34px;height:auto;margin-bottom:-3px;flex:none;filter:drop-shadow(0 2px 0 rgba(0,0,0,.08))}
+.thdeco svg.wide{width:46px}
+.thgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:6px 0 12px}
+.thopt{border:3px solid var(--edge);border-radius:16px;background:var(--card);color:var(--ink);box-shadow:0 3px 0 var(--shadow);padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;font:.95rem/1.2 var(--font-d)}
+.thopt[aria-pressed="true"]{outline:4px solid var(--sun);outline-offset:1px}
+.thopt .sw5{display:flex;gap:3px}.thopt .sw5 i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.12)}
+.thopt .tn{display:flex;align-items:center;gap:4px}
+html[data-th="t1"]{--edge:#4B3F8F;--shadow:#4B3F8F;--ink:#2B2552;--on:#2B2552;--soft:#5B5588;--card:#FFFFFFEE;--sun:#FFE27A;--mint:#8CF0CF;--sky:#A9C2FF;--coral:#FFA8D8;--sun-t:#FFF3C9;--mint-t:#D6F7EC;--sky-t:#DDE8FF;--coral-t:#FFE0F0;--op:#8A4DE8}
+html[data-th="t1"] body{background-color:#EAF7F5;background-image:radial-gradient(60% 45% at 15% 10%,#B9F2E1 0,transparent 70%),radial-gradient(55% 45% at 90% 20%,#D9C6FF 0,transparent 70%),radial-gradient(60% 50% at 50% 100%,#FFC9E6 0,transparent 70%);background-size:auto;background-attachment:fixed}
+html[data-th="t2"]{--edge:#9B3F7A;--shadow:#C0679F;--ink:#5B2147;--on:#5B2147;--soft:#8A5577;--card:#FFFFFF;--sun:#FFD36B;--mint:#FFC2DC;--sky:#E3C6FF;--coral:#FF9CC8;--sun-t:#FFF1B8;--mint-t:#FFE3EF;--sky-t:#F1DDFF;--coral-t:#FFD6E8;--op:#D6409F}
+html[data-th="t2"] body{background-color:#FFEAF4;background-image:radial-gradient(#FFC9E1 2px,transparent 2.5px);background-size:22px 22px}
+html[data-th="t3"]{--edge:#7B5A4B;--shadow:#B79A8A;--ink:#4A3A33;--on:#4A3A33;--soft:#7A665C;--card:#FFFDF8;--sun:#FFE3A3;--mint:#C9EBD3;--sky:#BFDDF7;--coral:#FFB9C7;--sun-t:#FFEFC9;--mint-t:#E1F4E7;--sky-t:#DCEEFF;--coral-t:#FFE0E6;--op:#E5718A}
+html[data-th="t3"] body{background-color:#FFF6EA;background-image:radial-gradient(#F4DCC4 3px,transparent 3.5px);background-size:30px 30px}
+html[data-th="t4"]{--edge:#6A4FB3;--shadow:#6A4FB3;--ink:#3A2E6B;--on:#3A2E6B;--soft:#5E5496;--card:#FFFFFF;--sun:#FFE27A;--mint:#B8F0D0;--sky:#A9D4FF;--coral:#FFB3D1;--sun-t:#FFF3B8;--mint-t:#DDF7E8;--sky-t:#E4EEFF;--coral-t:#FFE0EC;--op:#E0457B}
+html[data-th="t4"] body{background-color:#DFF1FF;background-image:radial-gradient(circle at 20% 20%,#FFFFFFCC 0 18px,transparent 19px),radial-gradient(circle at 28% 22%,#FFFFFFCC 0 14px,transparent 15px),radial-gradient(circle at 80% 55%,#FFFFFFCC 0 20px,transparent 21px),radial-gradient(circle at 88% 58%,#FFFFFFCC 0 14px,transparent 15px),linear-gradient(#CFE9FF,#FFE6F4);background-size:auto;background-attachment:fixed}
+html[data-th="t5"]{--edge:#1F6F86;--shadow:#1F6F86;--ink:#14485A;--on:#14485A;--soft:#3D6F80;--card:#FFFFFFF2;--sun:#FFE9A8;--mint:#9BEBDD;--sky:#8FD9F0;--coral:#FFB9D0;--sun-t:#FFF1C9;--mint-t:#D3F5EE;--sky-t:#D3F1FB;--coral-t:#FFE0EA;--op:#1FA3B8}
+html[data-th="t5"] body{background-color:#E3F8F8;background-image:radial-gradient(circle at 20% 30%,#FFFFFF99 0 6px,transparent 7px),radial-gradient(circle at 75% 60%,#FFFFFF99 0 9px,transparent 10px),radial-gradient(circle at 40% 85%,#FFFFFF99 0 5px,transparent 6px),linear-gradient(#D5F6F4,#BFE9F7 60%,#E5D9FF);background-size:auto;background-attachment:fixed}
 </style>
 
 <div class="wrap">
@@ -713,7 +733,7 @@ button.tier.on .em{display:inline-block;animation:stkHint 2.4s ease-in-out infin
   <section id="parent" class="screen" hidden></section>
 </div>
 
-<nav id="nav" class="nav" hidden aria-label="메뉴">
+<nav id="nav" class="nav" hidden aria-label="메뉴"><div class="thdeco" aria-hidden="true"></div>
   <div class="nav-in">
     <button type="button" class="nb" data-tab="today"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8M5 10v10h14V10"/></svg>오늘</button>
     <button type="button" class="nb" data-tab="practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-5L16 4l4 4L9 19zM14 6l4 4"/></svg>연습</button>
@@ -1243,7 +1263,7 @@ function readLocal(pid){
 }
 function adoptProf(d){
   const list={},o=[];
-  (d.o||[]).forEach(id=>{if(d.list&&d.list[id]&&!list[id]){const x=d.list[id],a=String(x.a||''),p=a==='p'?String(x.p||''):'';list[id]=Object.assign({n:String(x.n||'')},/^e\d+$/.test(a)?{a}:(a==='p'&&p?{a,p}:{}));o.push(id);}});
+  (d.o||[]).forEach(id=>{if(d.list&&d.list[id]&&!list[id]){const x=d.list[id],a=String(x.a||''),p=a==='p'?String(x.p||''):'';list[id]=Object.assign({n:String(x.n||'')},/^e\d+$/.test(a)?{a}:(a==='p'&&p?{a,p}:{}),/^t[1-5]$/.test(x.th||'')?{th:x.th}:{});o.push(id);}});
   if(!o.length){list.main={n:''};o.push('main');}
   PROF.list=list;PROF.o=o;PROF.t=d.t||0;
 }
@@ -1329,7 +1349,7 @@ function saveCfg(){CFG.t=Date.now();try{localStorage.setItem(lk(CFGK,PID),JSON.s
 function saveProf(){PROF.t=Date.now();try{localStorage.setItem(PROFK,JSON.stringify(PROF));}catch(e){}SYNC.dirty.prof=true;kick();ghSchedule();}
 function savePref(){try{localStorage.setItem(PREFK,JSON.stringify(PREF));}catch(e){}}
 function rerender(){
-  const s=document.body.dataset.screen;
+  const s=document.body.dataset.screen;applyTheme();
   if(s==='app')renderApp();else if(s==='parent')renderParent();else if(s==='intro')renderIntro();else if(s==='gradeSel')renderGrades();else if(s==='profSel')renderProfiles();
 }
 function subscribeProfile(){
@@ -1348,7 +1368,7 @@ function loadProfile(pid,force){
   PID=pid;readLocal(pid);
   SYNC.dirty.progress=false;SYNC.dirty.config=false;SYNC.seen.progress=false;SYNC.seen.config=false;
   if(SYNC.db){SYNC.state='connecting';subscribeProfile();}
-  syncBadge();
+  syncBadge();applyTheme();
 }
 function setKid(pid){
   KIDP=pid;KIDCHOSEN=true;try{localStorage.setItem(ACTK,pid);}catch(e){}
@@ -1547,6 +1567,53 @@ function pGit(){
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)ghSync(false);});
 
+/* ===== 테마: 프로필마다 따로 · 프로필 정보와 함께 동기화 ===== */
+const FACE=(x,y,k=1)=>`<g transform="translate(${x} ${y}) scale(${k})"><circle cx="-6" cy="0" r="1.9" fill="#4A3A33"/><circle cx="6" cy="0" r="1.9" fill="#4A3A33"/><ellipse cx="-10" cy="4" rx="3" ry="2" fill="#FF9FB8" opacity=".8"/><ellipse cx="10" cy="4" rx="3" ry="2" fill="#FF9FB8" opacity=".8"/><path d="M-2.5 4q2.5 2.6 5 0" stroke="#4A3A33" stroke-width="1.5" fill="none" stroke-linecap="round"/></g>`;
+const TW=(inner,vb='0 0 52 56',cls='')=>`<svg class="${cls}" viewBox="${vb}" aria-hidden="true">${inner}</svg>`;
+const TCR=(c,k)=>{const f={a:`<ellipse cx="14" cy="9" rx="5" ry="10" fill="${c}"/><ellipse cx="34" cy="9" rx="5" ry="10" fill="${c}"/>`,b:`<circle cx="11" cy="12" r="7" fill="${c}"/><circle cx="37" cy="12" r="7" fill="${c}"/>`,c:`<path d="M8 20L10 2l12 10zM40 20L38 2 26 12z" fill="${c}"/>`}[k];
+  return TW(f+`<ellipse cx="24" cy="32" rx="19" ry="17" fill="${c}"/>`+FACE(24,31),'0 0 48 52');};
+const TCH={
+  moon:()=>TW('<circle cx="26" cy="28" r="22" fill="#FFE9A8" stroke="#E8C96A" stroke-width="2"/><circle cx="40" cy="16" r="3.5" fill="#F5D67E"/><circle cx="12" cy="40" r="3" fill="#F5D67E"/>'+FACE(26,28,.9)),
+  star:(c='#FFE066')=>TW(`<path d="M26 3l6.2 14.6 15.8 1.4-12 10.4 3.7 15.5L26 36.8 12.3 44.9 16 29.4 4 19l15.8-1.4z" fill="${c}" stroke="#E8B923" stroke-width="2" stroke-linejoin="round"/>`+FACE(26,26,.8)),
+  cloud:()=>TW('<path d="M12 40a10 10 0 0 1 1-20 13 13 0 0 1 25-3 11 11 0 0 1 3 23z" fill="#fff" stroke="#BFD3F5" stroke-width="2"/>'+FACE(26,30,.9),'0 0 52 50','wide'),
+  princess:()=>TW('<ellipse cx="26" cy="22" rx="19" ry="19" fill="#FFB84D"/><path d="M26 34l17 20H9z" fill="#FF8FC2" stroke="#C45B96" stroke-width="2" stroke-linejoin="round"/><circle cx="26" cy="24" r="14" fill="#FFE3D0"/><path d="M12 18q6-10 14-5 8-5 14 5-8-3-14 0-6-3-14 0z" fill="#FFB84D"/><path d="M15 12l2-9 5 5 4-7 4 7 5-5 2 9z" fill="#FFD36B" stroke="#C58A12" stroke-width="1.8" stroke-linejoin="round"/>'+FACE(26,26,.85)),
+  crown:()=>TW('<path d="M4 28L2 8l11 9 11-14 11 14 11-9-2 20z" fill="#FFD36B" stroke="#C58A12" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="6" r="3" fill="#FF7BB0"/><circle cx="4" cy="8" r="2.6" fill="#8AD8FF"/><circle cx="44" cy="8" r="2.6" fill="#8AD8FF"/>','0 0 48 34','wide'),
+  heart:(c='#FF9CC8')=>TW(`<path d="M12 21S2 14 2 7.5A5.5 5.5 0 0 1 12 5a5.5 5.5 0 0 1 10 2.5C22 14 12 21 12 21z" fill="${c}"/>`,'0 0 24 22'),
+  uni:()=>TW('<path d="M26 2l4 12h-8z" fill="#FFD36B" stroke="#C58A12" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 22q-7 8-2 22 4-6 6-10zM42 22q7 8 2 22-4-6-6-10z" fill="#E6C3FF"/><circle cx="26" cy="32" r="18" fill="#fff" stroke="#C9B3F5" stroke-width="2"/><path d="M12 14l4 9-9-2zM40 14l-4 9 9-2z" fill="#fff" stroke="#C9B3F5" stroke-width="2" stroke-linejoin="round"/><path d="M16 14q10-6 20 0-3 5-10 3-6 2-10-3z" fill="#FFB3D9"/>'+FACE(26,33,.85)),
+  rainbow:()=>TW('<g fill="none" stroke-width="6" stroke-linecap="round"><path d="M6 46A40 40 0 0 1 86 46" stroke="#FF8FA3"/><path d="M14 46A32 32 0 0 1 78 46" stroke="#FFD27A"/><path d="M22 46A24 24 0 0 1 70 46" stroke="#9BE7B0"/><path d="M30 46A16 16 0 0 1 62 46" stroke="#8FCBFF"/></g>','0 0 92 48','wide'),
+  fish:()=>TW('<ellipse cx="24" cy="28" rx="18" ry="13" fill="#9BEBDD" stroke="#3AA8A0" stroke-width="2"/><path d="M40 28l10-10v20z" fill="#7FD6F0" stroke="#3AA8A0" stroke-width="2" stroke-linejoin="round"/>'+FACE(20,28,.8),'0 0 54 56','wide'),
+  shell:()=>TW('<path d="M26 6C10 6 4 22 6 38c8 8 32 8 40 0 2-16-4-32-20-32z" fill="#FFD3E4" stroke="#D77FA8" stroke-width="2"/><path d="M26 8v34M16 12l4 30M36 12l-4 30" stroke="#E7A3C4" stroke-width="1.8" fill="none"/>'+FACE(26,30,.8)),
+  cra:()=>TCR('#FFD9C7','a'),crb:()=>TCR('#CDEBD8','b'),crc:()=>TCR('#E2D6FF','c')
+};
+const THEMES=[
+  {id:'',n:'기본',e:'🎒',sw:['#FFC93C','#37C9A0','#52A8FF','#FF6F61'],ch:[]},
+  {id:'t1',n:'오로라',e:'🌙',sw:['#8CF0CF','#B6A2FF','#FFA8D8'],ch:['moon','star','cloud']},
+  {id:'t2',n:'공주님',e:'👑',sw:['#FFC2DC','#FFD36B','#F1DDFF'],ch:['princess','crown','heart']},
+  {id:'t3',n:'몽글 친구들',e:'🧸',sw:['#FFC9D6','#C9EBD3','#E2D6FF'],ch:['cra','crb','crc']},
+  {id:'t4',n:'무지개 유니콘',e:'🦄',sw:['#FFE27A','#B8F0D0','#CFE9FF'],ch:['rainbow','uni','star']},
+  {id:'t5',n:'인어 바다',e:'🧜‍♀️',sw:['#9BEBDD','#7FD6F0','#E5D9FF'],ch:['fish','shell','heart']}
+];
+const themeOf=pid=>{const t=PROF.list[pid]&&PROF.list[pid].th;return THEMES.some(x=>x.id===t)?t:'';};
+function applyTheme(){
+  const th=document.body.dataset.screen==='parent'?'':themeOf(PID);
+  const root=document.documentElement;
+  if(th)root.dataset.th=th;else delete root.dataset.th;
+  const d=document.querySelector('.thdeco');if(!d)return;
+  const T=THEMES.find(x=>x.id===th);
+  const key=th;if(d.dataset.k===key)return;d.dataset.k=key;
+  d.innerHTML=T&&T.ch.length?[T.ch[0],T.ch[T.ch.length-1]].map(c=>c==='star'&&th==='t4'?TCH.star('#FFE066'):TCH[c]()).join(''):'';
+}
+function setTheme(id){
+  if(!THEMES.some(x=>x.id===id))return;
+  PROF.list[PID]=Object.assign({},PROF.list[PID]);
+  if(id)PROF.list[PID].th=id;else delete PROF.list[PID].th;
+  saveProf();applyTheme();
+}
+function themeGrid(){
+  const cur=themeOf(PID);
+  return `<h3 class="gh" style="margin:12px 0 4px">테마</h3><div class="thgrid" role="group" aria-label="테마 고르기">${THEMES.map(t=>`<button type="button" class="thopt" data-th="${t.id||'base'}" aria-pressed="${cur===t.id}"><span class="tn"><span aria-hidden="true">${t.e}</span>${t.n}</span><span class="sw5" aria-hidden="true">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span></button>`).join('')}</div>`;
+}
+
 /* ===== 기록 · 보상 ===== */
 const TIERS=[[30,'🎈','풍선'],[80,'🍭','사탕'],[160,'🚀','로켓'],[260,'🦄','유니콘'],[380,'🐬','돌고래'],[520,'🏅','금메달'],[700,'🌈','무지개'],[900,'🏆','트로피'],[1150,'👑','왕관'],[1500,'🌟','슈퍼스타']];
 const balance=()=>DB.earned-DB.spent;
@@ -1666,7 +1733,7 @@ function show(id){
   const m=id==='play'?'play':'home';
   if(AU.mode!==m){AU.mode=m;AU.step=0;}
   if(id==='parent')bgmStop();else if(AU.ctx&&PREF.bgm)bgmStart();
-  window.scrollTo(0,0);
+  window.scrollTo(0,0);applyTheme();
 }
 function mascot(){
   return `<svg class="mascot" viewBox="0 0 100 100" aria-hidden="true">
@@ -1859,6 +1926,7 @@ function renderSheet(){
   $('#panel').innerHTML=`<h2>설정</h2>
    <div class="srow"><span>효과음</span><button type="button" class="sw" data-act="sfx" aria-pressed="${PREF.sfx}">${PREF.sfx?'켜짐':'꺼짐'}</button></div>
    <div class="srow"><span>배경음</span><button type="button" class="sw" data-act="bgm" aria-pressed="${PREF.bgm}">${PREF.bgm?'켜짐':'꺼짐'}</button></div>
+   ${themeGrid()}
    <button type="button" class="big alt" data-act="changeGrade">학년 바꾸기 (지금 ${DB.grade||'-'}학년)</button>
    ${PROF.o.length>1?`<button type="button" class="big alt" data-act="toProfiles">프로필 바꾸기 (지금 ${esc(profName(PID))})</button>`:''}
    <p class="pnote sheetsync">${syncText()}</p>
@@ -2228,6 +2296,7 @@ document.addEventListener('click',e=>{
   const act=t.dataset.act;
   if(t.dataset.tab){setTab(t.dataset.tab);}
   else if(t.dataset.stk!==undefined){openSticker(+t.dataset.stk);}
+  else if(t.dataset.th){setTheme(t.dataset.th==='base'?'':t.dataset.th);renderSheet();play('tap');}
   else if(t.dataset.av){if(SYNC.admin){setAvatar(PID,t.dataset.av);S.avMsg='';renderParent();play('tap');}}
   else if(t.dataset.pf){
     if(document.body.dataset.screen==='parent'){S.delArm='';loadProfile(t.dataset.pf);renderParent();}
