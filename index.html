@@ -2089,6 +2089,13 @@ function pProfiles(){
 function cfgChanged(){saveCfg();renderParent();}
 
 /* ===== 이벤트 ===== */
+/* 부모 화면 입구(버튼 없음): 첫 화면 제목 또는 상단 '○○의 수학 놀이터'를 3초 안에 5번 누르기 (또는 주소 끝에 #parent) */
+let _tp=[];
+document.addEventListener('click',e=>{
+  if(!e.target.closest||!e.target.closest('#intro h1,#appHead .ht'))return;
+  const n=Date.now();_tp=_tp.filter(t=>n-t<3000).concat(n);
+  if(_tp.length>=5){_tp=[];location.hash='parent';}
+});
 function route(){
   if(location.hash==='#parent'){renderParent();show('parent');return true;}
   return false;
