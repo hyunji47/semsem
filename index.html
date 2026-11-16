@@ -1337,9 +1337,9 @@ function pushPending(){
     try{fn().catch(()=>{});}catch(e){}
   }
 }
-function save(){DB.t=Date.now();try{localStorage.setItem(lk(DBK,PID),JSON.stringify(DB));}catch(e){}SYNC.dirty.progress=true;kick();}
-function saveCfg(){CFG.t=Date.now();try{localStorage.setItem(lk(CFGK,PID),JSON.stringify(CFG));}catch(e){}SYNC.dirty.config=true;kick();}
-function saveProf(){PROF.t=Date.now();try{localStorage.setItem(PROFK,JSON.stringify(PROF));}catch(e){}SYNC.dirty.prof=true;kick();}
+function save(){DB.t=Date.now();try{localStorage.setItem(lk(DBK,PID),JSON.stringify(DB));}catch(e){}SYNC.dirty.progress=true;kick();ghSchedule();}
+function saveCfg(){CFG.t=Date.now();try{localStorage.setItem(lk(CFGK,PID),JSON.stringify(CFG));}catch(e){}SYNC.dirty.config=true;kick();ghSchedule();}
+function saveProf(){PROF.t=Date.now();try{localStorage.setItem(PROFK,JSON.stringify(PROF));}catch(e){}SYNC.dirty.prof=true;kick();ghSchedule();}
 function savePref(){try{localStorage.setItem(PREFK,JSON.stringify(PREF));}catch(e){}}
 function rerender(){
   const s=document.body.dataset.screen;
@@ -1420,6 +1420,7 @@ async function initShared(){
   }catch(e){}
 }
 function syncText(){
+  if(!SYNC.db&&gh())return ghText();
   if(!SYNC.db)return '이 기기에만 저장돼요. 다른 기기와 연결하려면 로그인한 계정으로 열어 주세요.';
   if(SYNC.state==='live')return '다른 기기와 연결됨 · 기록이 바로 반영돼요.';
   if(SYNC.state==='readonly')return '보기 전용이에요. 기록과 설정을 바꿀 권한이 없어요.';
@@ -1428,6 +1429,136 @@ function syncText(){
   return '연결 중…';
 }
 function syncBadge(){document.querySelectorAll('.psync,.sheetsync').forEach(e=>{e.textContent=syncText();});}
+/* ===== GitHub 저장소 동기화 (Claude 화면 밖, 예: GitHub 페이지에서 열 때) · 토큰은 이 기기 브라우저에만 저장 ===== */
+const GHK='semsem-gh-v1',GHN=/^[A-Za-z0-9_.-]{1,100}$/,GHFILE='data/store.json';
+const GH={timer:null,busy:false,at:0,err:'',sha:''};
+const gh=()=>{const g=readJSON(GHK);return g&&GHN.test(g.owner||'')&&GHN.test(g.repo||'')&&g.token?g:null;};
+const ghUrl=g=>'https://api.github.com/repos/'+g.owner+'/'+g.repo+'/contents/'+GHFILE;
+const ghAuth=g=>({'Accept':'application/vnd.github+json','Authorization':'Bearer '+g.token});
+function ghHint(e){
+  const m=String((e&&e.message)||e||''),c=(m.match(/\b(\d{3})\b/)||[])[1];
+  if(c==='401')return '토큰이 올바르지 않거나 만료됐어요 (401)';
+  if(c==='403')return '토큰에 쓰기 권한이 없거나 GitHub 호출 한도를 넘었어요 (403)';
+  if(c==='404')return '저장소를 찾지 못했거나 토큰에 그 저장소 권한(Contents 읽기/쓰기)이 없어요 (404)';
+  if(c==='413'||c==='422')return '저장할 데이터가 너무 크거나 형식이 맞지 않아요 ('+c+')';
+  if(/conflict/.test(m))return '다른 기기에서 동시에 저장해서 충돌했어요. 잠시 뒤 다시 시도돼요';
+  if(/Failed to fetch|NetworkError|Load failed/i.test(m))return '네트워크가 끊겼거나 이 화면의 보안 설정이 연결을 막았어요';
+  return '알 수 없는 오류: '+m.slice(0,60);
+}
+function ghText(){
+  if(!gh())return '이 기기에만 저장돼요. 다른 기기와 연결하려면 아래에서 GitHub를 연결하세요.';
+  if(GH.err)return '⚠️ GitHub 저장 실패: '+GH.err+' · 이 기기에는 저장돼요.';
+  if(GH.at)return 'GitHub와 연결됨 · 마지막 동기화 '+new Date(GH.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  return 'GitHub에 연결하는 중…';
+}
+const b64enc=s=>{let x='';new TextEncoder().encode(s).forEach(c=>x+=String.fromCharCode(c));return btoa(x);};
+const b64dec=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+function ghTrimHw(p){
+  if(!p||typeof p!=='object')return p;
+  const d=JSON.parse(JSON.stringify(p)),ks=Object.keys(d.hw||{}).sort();
+  if(ks.length>400)ks.slice(0,ks.length-400).forEach(k=>{delete d.hw[k];});
+  return d;
+}
+function ghCollect(){
+  const kids={};
+  PROF.o.forEach(id=>{
+    const p=id===PID?DB:readJSON(lk(DBK,id)),c=id===PID?CFG:readJSON(lk(CFGK,id));
+    kids[id]={p:p&&typeof p==='object'?ghTrimHw(p):null,c:c&&typeof c==='object'?JSON.parse(JSON.stringify(c)):null};
+  });
+  return {app:'semsem',v:1,prof:JSON.parse(JSON.stringify(PROF)),kids};
+}
+const ghSig=o=>JSON.stringify({prof:o.prof,kids:o.kids});
+/* 받은 데이터 중 이 기기보다 새로운 것만 받아들인다. 바뀐 게 있으면 true */
+function ghApply(rem){
+  let ch=false;
+  if(!rem||rem.app!=='semsem')return false;
+  if(rem.prof&&typeof rem.prof==='object'&&(rem.prof.t||0)>(PROF.t||0)){
+    adoptProf(rem.prof);try{localStorage.setItem(PROFK,JSON.stringify(PROF));}catch(e){}
+    if(!PROF.list[KIDP]){KIDP=PROF.o[0];try{localStorage.setItem(ACTK,KIDP);}catch(e){}}
+    ch=true;
+  }
+  const kids=rem.kids&&typeof rem.kids==='object'?rem.kids:{};
+  PROF.o.forEach(id=>{
+    const r=kids[id];if(!r)return;
+    const lp=id===PID?DB:readJSON(lk(DBK,id)),lc=id===PID?CFG:readJSON(lk(CFGK,id));
+    if(r.p&&typeof r.p==='object'&&(r.p.t||0)>((lp&&lp.t)||0)){
+      if(id===PID){adoptProgress(r.p);try{localStorage.setItem(lk(DBK,id),JSON.stringify(DB));}catch(e){}}
+      else{try{localStorage.setItem(lk(DBK,id),JSON.stringify(r.p));}catch(e){}}
+      ch=true;
+    }
+    if(r.c&&typeof r.c==='object'&&(r.c.t||0)>((lc&&lc.t)||0)){
+      if(id===PID){applyCfg(r.c);try{localStorage.setItem(lk(CFGK,id),JSON.stringify(CFG));}catch(e){}}
+      else{try{localStorage.setItem(lk(CFGK,id),JSON.stringify(r.c));}catch(e){}}
+      ch=true;
+    }
+  });
+  if(!PROF.list[PID]){PID=PROF.o[0];readLocal(PID);ch=true;}
+  return ch;
+}
+async function ghPull(g){
+  const r=await fetch(ghUrl(g)+'?t='+Date.now(),{headers:ghAuth(g),cache:'no-store'});
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error('pull '+r.status);
+  const j=await r.json();let text;
+  if(j.content&&j.encoding==='base64')text=b64dec(j.content);
+  else{const r2=await fetch(ghUrl(g),{headers:Object.assign({},ghAuth(g),{'Accept':'application/vnd.github.raw+json'}),cache:'no-store'});if(!r2.ok)throw new Error('pull '+r2.status);text=await r2.text();}
+  return {sha:j.sha,data:JSON.parse(text)};
+}
+async function ghPut(g,data,sha){
+  const body={message:'셈셈 동기화 '+new Date().toISOString().slice(0,16).replace('T',' ')+' UTC',content:b64enc(JSON.stringify(data))};
+  if(sha)body.sha=sha;
+  const r=await fetch(ghUrl(g),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghAuth(g)),body:JSON.stringify(body)});
+  if(r.status===409||r.status===422)throw new Error('conflict '+r.status);
+  if(!r.ok)throw new Error('put '+r.status);
+}
+function ghSchedule(){
+  if(SYNC.db||!gh())return;
+  clearTimeout(GH.timer);GH.timer=setTimeout(()=>ghSync(false),3000);
+}
+async function ghSync(manual){
+  const g=gh();if(SYNC.db||!g||GH.busy)return;
+  clearTimeout(GH.timer);
+  if(document.body.dataset.screen==='play'){GH.timer=setTimeout(()=>ghSync(false),15000);return;}
+  GH.busy=true;
+  try{
+    for(let k=0;k<2;k++){
+      const rem=await ghPull(g);
+      if(rem&&ghApply(rem.data))rerender();
+      const mine=ghCollect();
+      if(!rem||ghSig(mine)!==ghSig(rem.data)){
+        mine.updatedAt=Date.now();
+        try{await ghPut(g,mine,rem&&rem.sha);}catch(e){if(k===0&&/conflict/.test(e.message))continue;throw e;}
+      }
+      break;
+    }
+    GH.at=Date.now();GH.err='';
+  }catch(e){GH.err=ghHint(e);}
+  GH.busy=false;
+  syncBadge();
+  if(manual||document.body.dataset.screen==='parent'){const m=$('#ghMsg');if(m)m.textContent=ghText();}
+}
+function ghSave(){
+  const o=($('#ghO')||{}).value||'',r=($('#ghR')||{}).value||'',t=($('#ghT')||{}).value||'';
+  const owner=o.trim(),repo=r.trim().replace(/\.git$/,''),token=t.trim();
+  if(!GHN.test(owner)||!GHN.test(repo)||!token){S.ghMsg='아이디, 저장소, 토큰을 모두 입력해 주세요.';renderParent();return;}
+  try{localStorage.setItem(GHK,JSON.stringify({owner,repo,token}));}catch(e){S.ghMsg='이 기기에 저장하지 못했어요.';renderParent();return;}
+  S.ghEdit=false;S.ghMsg='';GH.err='';GH.at=0;renderParent();ghSync(true);
+}
+function ghClear(){try{localStorage.removeItem(GHK);}catch(e){}S.ghEdit=false;S.ghMsg='';GH.err='';GH.at=0;renderParent();}
+function pGit(){
+  if(SYNC.db)return '';
+  const g=gh();
+  const form=`<label class="pnote" for="ghO" style="margin:0">GitHub 아이디</label><input id="ghO" class="inp" type="text" autocapitalize="off" autocorrect="off" value="${esc((g&&g.owner)||'hyunji47')}">
+   <label class="pnote" for="ghR" style="margin:10px 0 0">저장소 이름 (비공개 권장)</label><input id="ghR" class="inp" type="text" autocapitalize="off" autocorrect="off" value="${esc((g&&g.repo)||'semsem-data')}">
+   <label class="pnote" for="ghT" style="margin:10px 0 0">토큰 (Fine-grained · 이 저장소 Contents 읽기/쓰기)</label><input id="ghT" class="inp" type="password" autocapitalize="off" autocorrect="off" autocomplete="off" value="${esc((g&&g.token)||'')}" placeholder="github_pat_…">
+   <p class="pnote">토큰은 이 기기 브라우저에만 저장돼요. 이 저장소 하나에만 권한을 준 토큰을 쓰세요.</p>
+   <div class="rbtns" style="justify-content:flex-start"><button type="button" class="mini-btn" data-act="ghSave">저장하고 연결</button>${g?'<button type="button" class="mini-btn" data-act="ghClear">연결 해제</button>':''}</div>`;
+  const view=`<p class="pnote" id="ghMsg" role="status" style="margin-top:0">${esc(ghText())}</p><div class="rbtns" style="justify-content:flex-start"><button type="button" class="mini-btn" data-act="ghNow">지금 동기화</button><button type="button" class="mini-btn" data-act="ghEdit">설정 바꾸기</button></div>`;
+  return `<div class="panelbox"><h3>GitHub 연결<small>${g?'켜짐':'꺼짐'}</small></h3>
+   <p class="pnote" style="margin-top:0">기록과 설정을 GitHub 저장소(data/store.json)에 자동으로 저장해서, 다른 기기에서도 같은 내용이 열려요.</p>
+   ${(g&&!S.ghEdit)?view:form}${S.ghMsg?`<p class="pnote" role="status">${esc(S.ghMsg)}</p>`:''}</div>`;
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)ghSync(false);});
 
 /* ===== 기록 · 보상 ===== */
 const TIERS=[[30,'🎈','풍선'],[80,'🍭','사탕'],[160,'🚀','로켓'],[260,'🦄','유니콘'],[380,'🐬','돌고래'],[520,'🏅','금메달'],[700,'🌈','무지개'],[900,'🏆','트로피'],[1150,'👑','왕관'],[1500,'🌟','슈퍼스타']];
@@ -2040,7 +2171,7 @@ function pStat(){
 }
 function pSet(){
   const g=DB.grade;
-  if(!g)return pProfiles()+`<div class="panelbox"><h3>학년이 아직 정해지지 않았어요</h3><p class="pnote">아이 기기에서 이 프로필을 골라 학년을 먼저 정해 주세요. 그 뒤에 진도·난이도 설정이 나와요.</p></div>`;
+  if(!g)return pProfiles()+pGit()+`<div class="panelbox"><h3>학년이 아직 정해지지 않았어요</h3><p class="pnote">아이 기기에서 이 프로필을 골라 학년을 먼저 정해 주세요. 그 뒤에 진도·난이도 설정이 나와요.</p></div>`;
   const dis=SYNC.admin?'':' disabled',li=levelInfo(),plan=buildPlan(g,CFG,curMonth(),li.lv),idxAuto=paceStep(g,curMonth());
   const stepOpts=`<option value="auto"${CFG.pace==='auto'?' selected':''}>자동 · 오늘(${curMonth()}월) → ${esc(PACE[g][idxAuto].t)}</option>`+PACE[g].map((s,i)=>`<option value="${i}"${String(CFG.pace)===String(i)?' selected':''}>${i+1}단계 · ${monthsLabel(s.m)} · ${esc(s.t)}</option>`).join('');
   const cnt=(k,label,step)=>`<div class="srow"><span>${label}</span><span class="stepper"><button type="button" data-cnt="${k}" data-d="${-step}" aria-label="${label} 줄이기"${dis}>−</button><b>${CFG.counts[k]}</b><button type="button" data-cnt="${k}" data-d="${step}" aria-label="${label} 늘리기"${dis}>＋</button></span></div>`;
@@ -2056,7 +2187,7 @@ function pSet(){
   const prev=['calc','logic','other'].map(c=>`<li><b>${CAT_NAME[c]} ${sumN(plan.alloc[c])}문제</b><span>${plan.alloc[c].map(x=>`${unitById(x.u).name} ${x.n}`).join(' · ')||'없음'}</span></li>`).join('');
   return `${SYNC.admin?'':'<div class="panelbox warn"><p class="pnote" style="margin:0">이 계정은 보기 전용이에요. 설정은 소유자나 편집자 계정에서만 바꿀 수 있어요.</p></div>'}
   <div class="pgrid">
-  ${pProfiles()}
+  ${pProfiles()}${pGit()}
   <div class="panelbox"><h3>난이도</h3><div class="seg4">${[['auto','자동'],['1','쉬움'],['2','보통'],['3','어려움']].map(([v,t])=>`<button type="button" data-lv="${v}" aria-pressed="${String(CFG.lv)===v}"${dis}>${t}</button>`).join('')}</div>
     <p class="pnote">같은 단원 안에서 숫자가 작은 문제(쉬움) 또는 큰 문제(어려움) 위주로 나와요. ‘자동’은 최근 3일 숙제에서 한 번에 맞힌 비율이 88% 이상이면 한 단계 올리고, 65% 미만이면 내려요.<br>지금 적용: <b>${LV_NAME[li.lv]}</b>${li.auto?(li.rate==null?' (기록이 없어 보통으로 시작)':` (최근 ${li.n}일 ${Math.round(li.rate*100)}%)`):''}</p></div>
   <div class="panelbox"><h3>학교 진도</h3><select id="pPace" class="inp"${dis}>${stepOpts}</select><p class="pnote">지금 배우는 단원이 숙제의 대부분을 차지하고, 앞서 배운 연산 단원은 복습으로 조금 섞여요. 진도는 교과서 단원 순서를 바탕으로 한 대략적인 시기예요. 학교 진도와 다르면 단계를 직접 고르세요.</p></div>
@@ -2146,6 +2277,10 @@ document.addEventListener('click',e=>{
     switch(act){
       case 'start':play('start');if(PROF.o.length>1&&!KIDCHOSEN)toProfiles();else DB.grade?enterApp('today'):toGrades();break;
       case 'closeStk':closeStk();break;
+      case 'ghSave':ghSave();break;
+      case 'ghClear':ghClear();break;
+      case 'ghEdit':S.ghEdit=true;S.ghMsg='';renderParent();break;
+      case 'ghNow':{const m=$('#ghMsg');if(m)m.textContent='동기화 중…';ghSync(true);break;}
       case 'avPhoto':{const f=$('#avFile');if(f)f.click();break;}
       case 'avClear':if(SYNC.admin){setAvatar(PID,'');S.avMsg='';renderParent();}break;
       case 'toProfiles':closeSheet();play('tap');toProfiles();break;
@@ -2249,5 +2384,5 @@ document.addEventListener('keydown',e=>{
 });
 window.addEventListener('pagehide',()=>{if(SYNC.db&&SYNC.canWrite)flush();});
 if(!route()){renderIntro();show('intro');}
-initShared();
-</script></body></html>
+initShared().then(()=>{if(!SYNC.db&&gh())ghSync(false);});
+</script>
