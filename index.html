@@ -477,6 +477,13 @@ select.inp{appearance:auto}
     <div class="gcards" id="gcards"></div>
   </section>
 
+  <section id="profSel" class="screen" hidden>
+    <button type="button" class="quit" data-act="toIntro">← 처음으로</button>
+    <h2 class="gtitle">누가 풀까요?</h2>
+    <p class="gsub">프로필마다 기록과 코인이 따로 쌓여요.</p>
+    <div class="gcards" id="profBox"></div>
+  </section>
+
   <div id="app" class="screen" hidden>
     <header class="ahead" id="appHead"></header>
     <main id="view" class="view"></main>
@@ -1003,34 +1010,55 @@ const DOW=['일','월','화','수','목','금','토'];
 const dateLabel=k=>{const d=fromKey(k);return `${d.getMonth()+1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일`;};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-/* ===== 저장: 이 기기(localStorage) + 공유 DB(다른 기기와 동기화) ===== */
-const DBK='semsem-v2',CFGK='semsem-cfg-v1',PREFK='semsem-pref-v1';
+/* ===== 저장: 이 기기(localStorage) + 공유 DB(다른 기기와 동기화) · 프로필별로 따로 저장 ===== */
+const DBK='semsem-v2',CFGK='semsem-cfg-v1',PREFK='semsem-pref-v1',PROFK='semsem-profiles-v1',ACTK='semsem-active-v1';
+const lk=(base,pid)=>pid==='main'?base:base+':'+pid;
 const defaultDB=()=>({grade:0,start:'',earned:0,spent:0,hw:{},stars:{},ustat:{},goal:{name:'',cost:100},redeemed:[],prog:null,pracDay:{d:'',c:0},t:0});
 const DB=defaultDB(),CFG=defaultCfg(),PREF={sfx:true,bgm:true};
+const PROF={list:{main:{n:''}},o:['main'],t:0};
+let PID='main',KIDP='main',KIDCHOSEN=false;
+const MAXP=6,PEMO=['🐻','🐰','🦊','🐼','🐯','🐸'];
 function readJSON(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}
-function applyCfg(c){const d=defaultCfg();Object.assign(CFG,d,c);CFG.counts=Object.assign({},d.counts,(c&&c.counts)||{});CFG.units=Object.assign({},(c&&c.units)||{});}
+function applyCfg(c){const d=defaultCfg();Object.keys(CFG).forEach(k=>delete CFG[k]);Object.assign(CFG,d,c);CFG.counts=Object.assign({},d.counts,(c&&c.counts)||{});CFG.units=Object.assign({},(c&&c.units)||{});}
 function adoptProgress(d){Object.keys(DB).forEach(k=>delete DB[k]);Object.assign(DB,defaultDB(),d);delete DB.sfx;delete DB.bgm;}
+function readLocal(pid){
+  const o=readJSON(lk(DBK,pid));
+  adoptProgress(o&&typeof o==='object'?o:{});
+  if(pid==='main'&&o&&'sfx' in o){PREF.sfx=o.sfx!==false;PREF.bgm=o.bgm!==false;}
+  if(pid==='main'&&!Object.keys(DB.stars).length){const s=readJSON('semsem-stars-v1');if(s&&typeof s==='object')DB.stars=s;}
+  const c=readJSON(lk(CFGK,pid));applyCfg(c&&typeof c==='object'?c:{});
+}
+function adoptProf(d){
+  const list={},o=[];
+  (d.o||[]).forEach(id=>{if(d.list&&d.list[id]&&!list[id]){list[id]={n:String(d.list[id].n||'')};o.push(id);}});
+  if(!o.length){list.main={n:''};o.push('main');}
+  PROF.list=list;PROF.o=o;PROF.t=d.t||0;
+}
 (function(){
-  const o=readJSON(DBK);
-  if(o&&typeof o==='object'){adoptProgress(o);if('sfx' in o){PREF.sfx=o.sfx!==false;PREF.bgm=o.bgm!==false;}}
-  if(!Object.keys(DB.stars).length){const s=readJSON('semsem-stars-v1');if(s&&typeof s==='object')DB.stars=s;}
-  const c=readJSON(CFGK);if(c&&typeof c==='object')applyCfg(c);
-  const p=readJSON(PREFK);if(p&&typeof p==='object')Object.assign(PREF,p);
+  const p=readJSON(PROFK);if(p&&typeof p==='object')adoptProf(p);
+  const pf=readJSON(PREFK);if(pf&&typeof pf==='object')Object.assign(PREF,pf);
+  let a=null;try{a=localStorage.getItem(ACTK);}catch(e){}
+  KIDCHOSEN=!!(a&&PROF.list[a]);KIDP=KIDCHOSEN?a:PROF.o[0];PID=KIDP;
+  readLocal(PID);
 })();
-const SYNC={db:null,admin:true,canWrite:true,state:'local',busy:false,timer:null,dirty:{progress:false,config:false},seen:{progress:false,config:false}};
+const kidName=()=>(PROF.list[PID]&&PROF.list[PID].n)||(PID==='main'?CFG.name:'')||'';
+const profName=pid=>(PROF.list[pid]&&PROF.list[pid].n)||(pid==='main'&&PID==='main'&&CFG.name)||('아이 '+(PROF.o.indexOf(pid)+1));
+const SYNC={db:null,admin:true,canWrite:true,state:'local',busy:false,timer:null,dirty:{progress:false,config:false,prof:false},seen:{progress:false,config:false,prof:false},unsub:{p:null,c:null}};
 function remoteDoc(){
   const d=JSON.parse(JSON.stringify(DB)),ks=Object.keys(d.hw).sort();
   if(ks.length>400)ks.slice(0,ks.length-400).forEach(k=>{delete d.hw[k];});
   return d;
 }
 function kick(){if(!SYNC.db||!SYNC.canWrite)return;clearTimeout(SYNC.timer);SYNC.timer=setTimeout(flush,1500);}
+function jobList(pid){
+  return [['progress',()=>SYNC.db.doc('progress/'+pid).set(remoteDoc())],['config',()=>SYNC.db.doc('config/'+pid).set(JSON.parse(JSON.stringify(CFG)))],['prof',()=>SYNC.db.doc('config/profiles').set(JSON.parse(JSON.stringify(PROF)))]];
+}
 async function flush(){
   if(!SYNC.db||SYNC.busy||!SYNC.canWrite)return;
   SYNC.busy=true;
-  const jobs=[['progress',()=>SYNC.db.doc('progress/main').set(remoteDoc())],['config',()=>SYNC.db.doc('config/main').set(JSON.parse(JSON.stringify(CFG)))]];
-  for(const [name,fn] of jobs){
+  for(const [name,fn] of jobList(PID)){
     if(!SYNC.dirty[name]||!SYNC.seen[name])continue;
-    if(name==='config'&&!SYNC.admin)continue;
+    if((name==='config'||name==='prof')&&!SYNC.admin)continue;
     SYNC.dirty[name]=false;
     try{await fn();}
     catch(e){
@@ -1040,37 +1068,83 @@ async function flush(){
     }
   }
   SYNC.busy=false;
-  if(SYNC.canWrite&&(SYNC.dirty.progress||SYNC.dirty.config))kick();
+  if(SYNC.canWrite&&(SYNC.dirty.progress||SYNC.dirty.config||SYNC.dirty.prof))kick();
   syncBadge();
 }
-function save(){DB.t=Date.now();try{localStorage.setItem(DBK,JSON.stringify(DB));}catch(e){}SYNC.dirty.progress=true;kick();}
-function saveCfg(){CFG.t=Date.now();try{localStorage.setItem(CFGK,JSON.stringify(CFG));}catch(e){}SYNC.dirty.config=true;kick();}
+/* 프로필을 바꾸기 전에 아직 못 보낸 변경이 있으면 지금 보내 둔다 (이 기기에도 저장돼 있어서 잃지 않는다) */
+function pushPending(){
+  if(!SYNC.db||!SYNC.canWrite)return;
+  for(const [name,fn] of jobList(PID)){
+    if(name==='prof'||!SYNC.dirty[name]||!SYNC.seen[name])continue;
+    if(name==='config'&&!SYNC.admin)continue;
+    try{fn().catch(()=>{});}catch(e){}
+  }
+}
+function save(){DB.t=Date.now();try{localStorage.setItem(lk(DBK,PID),JSON.stringify(DB));}catch(e){}SYNC.dirty.progress=true;kick();}
+function saveCfg(){CFG.t=Date.now();try{localStorage.setItem(lk(CFGK,PID),JSON.stringify(CFG));}catch(e){}SYNC.dirty.config=true;kick();}
+function saveProf(){PROF.t=Date.now();try{localStorage.setItem(PROFK,JSON.stringify(PROF));}catch(e){}SYNC.dirty.prof=true;kick();}
 function savePref(){try{localStorage.setItem(PREFK,JSON.stringify(PREF));}catch(e){}}
 function rerender(){
   const s=document.body.dataset.screen;
-  if(s==='app')renderApp();else if(s==='parent')renderParent();else if(s==='intro')renderIntro();else if(s==='gradeSel')renderGrades();
+  if(s==='app')renderApp();else if(s==='parent')renderParent();else if(s==='intro')renderIntro();else if(s==='gradeSel')renderGrades();else if(s==='profSel')renderProfiles();
 }
-function onProgressSnap(snap){
+function subscribeProfile(){
+  if(!SYNC.db)return;
+  if(SYNC.unsub.p)try{SYNC.unsub.p();}catch(e){}
+  if(SYNC.unsub.c)try{SYNC.unsub.c();}catch(e){}
+  const pid=PID,onErr=e=>{if(pid!==PID)return;if(e&&(e.code==='revoked'||e.code==='invalid_argument'))SYNC.canWrite=false;SYNC.state='error';syncBadge();};
+  SYNC.unsub.p=SYNC.db.doc('progress/'+pid).onSnapshot(s=>onProgressSnap(s,pid),onErr);
+  SYNC.unsub.c=SYNC.db.doc('config/'+pid).onSnapshot(s=>onConfigSnap(s,pid),onErr);
+}
+/* 프로필 불러오기: 기록·설정은 프로필마다 따로 저장돼요 */
+function loadProfile(pid,force){
+  if(!PROF.list[pid])pid=PROF.o[0];
+  if(pid===PID&&!force)return;
+  pushPending();
+  PID=pid;readLocal(pid);
+  SYNC.dirty.progress=false;SYNC.dirty.config=false;SYNC.seen.progress=false;SYNC.seen.config=false;
+  if(SYNC.db){SYNC.state='connecting';subscribeProfile();}
+  syncBadge();
+}
+function setKid(pid){
+  KIDP=pid;KIDCHOSEN=true;try{localStorage.setItem(ACTK,pid);}catch(e){}
+  loadProfile(pid);
+}
+function onProgressSnap(snap,pid){
+  if(pid!==PID)return;
   if(snap.metadata&&snap.metadata.hasPendingWrites)return;
   const cached=!!(snap.metadata&&snap.metadata.fromCache);
   if(!cached){SYNC.seen.progress=true;SYNC.state=SYNC.canWrite?'live':'readonly';}
   const d=snap.exists?snap.data():null;
   if(d&&(d.t||0)>(DB.t||0)){
     if(document.body.dataset.screen==='play')return;
-    adoptProgress(d);try{localStorage.setItem(DBK,JSON.stringify(DB));}catch(e){}
+    adoptProgress(d);try{localStorage.setItem(lk(DBK,PID),JSON.stringify(DB));}catch(e){}
     rerender();
   }else if(!cached&&(DB.t||0)>((d&&d.t)||0)){SYNC.dirty.progress=true;kick();}
   syncBadge();
 }
-function onConfigSnap(snap){
+function onConfigSnap(snap,pid){
+  if(pid!==PID)return;
   if(snap.metadata&&snap.metadata.hasPendingWrites)return;
   const cached=!!(snap.metadata&&snap.metadata.fromCache);
   if(!cached)SYNC.seen.config=true;
   const d=snap.exists?snap.data():null;
   if(d&&(d.t||0)>(CFG.t||0)){
-    applyCfg(d);try{localStorage.setItem(CFGK,JSON.stringify(CFG));}catch(e){}
+    applyCfg(d);try{localStorage.setItem(lk(CFGK,PID),JSON.stringify(CFG));}catch(e){}
     if(document.body.dataset.screen!=='play')rerender();
   }else if(!cached&&SYNC.admin&&(CFG.t||0)>((d&&d.t)||0)){SYNC.dirty.config=true;kick();}
+}
+function onProfSnap(snap){
+  if(snap.metadata&&snap.metadata.hasPendingWrites)return;
+  const cached=!!(snap.metadata&&snap.metadata.fromCache);
+  if(!cached)SYNC.seen.prof=true;
+  const d=snap.exists?snap.data():null;
+  if(d&&(d.t||0)>(PROF.t||0)){
+    adoptProf(d);try{localStorage.setItem(PROFK,JSON.stringify(PROF));}catch(e){}
+    if(!PROF.list[KIDP]){KIDP=PROF.o[0];try{localStorage.setItem(ACTK,KIDP);}catch(e){}}
+    if(!PROF.list[PID])loadProfile(document.body.dataset.screen==='parent'?PROF.o[0]:KIDP);
+    if(document.body.dataset.screen!=='play')rerender();
+  }else if(!cached&&SYNC.admin&&(PROF.t||0)>((d&&d.t)||0)){SYNC.dirty.prof=true;kick();}
 }
 async function initShared(){
   try{
@@ -1083,9 +1157,8 @@ async function initShared(){
     }
     SYNC.db=db;SYNC.state='connecting';syncBadge();
     setTimeout(()=>{if(SYNC.state==='connecting'){SYNC.state='slow';syncBadge();}},10000);
-    const onErr=e=>{if(e&&(e.code==='revoked'||e.code==='invalid_argument'))SYNC.canWrite=false;SYNC.state='error';syncBadge();};
-    db.doc('progress/main').onSnapshot(onProgressSnap,onErr);
-    db.doc('config/main').onSnapshot(onConfigSnap,onErr);
+    db.doc('config/profiles').onSnapshot(onProfSnap,()=>{});
+    subscribeProfile();
     rerender();
   }catch(e){}
 }
@@ -1209,7 +1282,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)bgmStop();e
 /* ===== 공통 UI ===== */
 const ICON={gear:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>'};
 const S={tab:'today',ptab:'stat',n:20,mode:'practice',unit:null,hwKey:'',all:[],lay:[],stage:0,base:0,probs:[],i:0,slots:[],cur:0,step:1,tries:0,res:[],locked:false,done:false,calY:0,calM:0,sel:'',arm:false,tick:0};
-const SCREENS=['intro','gradeSel','app','play','result','parent'];
+const SCREENS=['intro','gradeSel','profSel','app','play','result','parent'];
 function show(id){
   SCREENS.forEach(s=>{$('#'+s).hidden=s!==id;});
   $('#nav').hidden=id!=='app';
@@ -1241,6 +1314,11 @@ function mood(el,m){
 
 
 /* ===== 인트로 · 학년 선택 ===== */
+function renderProfiles(){
+  const cards=PROF.o.map((id,i)=>`<button type="button" class="gcard g${i%3+1}" data-pf="${id}"><span class="gnum">${PEMO[i%PEMO.length]}</span><span><b>${esc(profName(id))}${id===KIDP&&KIDCHOSEN?'<span class="now">이 기기</span>':''}</b><small>눌러서 시작해요</small></span></button>`).join('');
+  const add=SYNC.admin&&PROF.o.length<MAXP?`<div class="panelbox"><h3>새 프로필</h3><input id="newProfName" class="inp" type="text" maxlength="10" placeholder="이름 (예: 민준)" aria-label="새 프로필 이름"><button type="button" class="big alt" style="margin-top:10px;width:100%" data-act="addProfKid">프로필 만들고 시작하기</button></div>`:'';
+  $('#profBox').innerHTML=`${cards}${add}`;
+}
 function renderIntro(){
   $('#introMascot').innerHTML=mascot();
   $('#startBtn').textContent=DB.grade?`이어서 하기 · ${DB.grade}학년`:'시작하기';
@@ -1251,12 +1329,14 @@ function renderGrades(){
 }
 const GRADE_CARD={1:'수 세기 · 10 안의 덧셈 · 뺄셈 · 규칙 찾기',2:'두 자리 수 계산 · 곱셈구구 · 도형 · 규칙과 식',3:'세 자리 수 · 곱셈 · 나눗셈 · 분수 · 평균 · 확률'};
 function toIntro(){renderIntro();show('intro');}
+function toProfiles(){renderProfiles();show('profSel');}
+function leaveParent(){if(PID!==KIDP)loadProfile(KIDP);DB.grade?enterApp():toIntro();}
 function toGrades(){renderGrades();show('gradeSel');}
 function enterApp(tab){if(tab)setTab(tab,true);else renderApp();show('app');}
 
 /* ===== 메인(탭) ===== */
 function renderHead(){
-  $('#appHead').innerHTML=`${mascot()}<div class="ht"><b>${CFG.name?esc(CFG.name)+'의 ':''}수학 놀이터</b><small>${DB.grade}학년</small></div><div class="coinchip" aria-label="코인 ${balance()}개"><span class="coinic">★</span>${balance()}</div><button type="button" class="gear" data-act="sheet" aria-label="설정">${ICON.gear}</button>`;
+  $('#appHead').innerHTML=`${mascot()}<div class="ht"><b>${kidName()?esc(kidName())+'의 ':''}수학 놀이터</b><small>${DB.grade}학년</small></div><div class="coinchip" aria-label="코인 ${balance()}개"><span class="coinic">★</span>${balance()}</div><button type="button" class="gear" data-act="sheet" aria-label="설정">${ICON.gear}</button>`;
 }
 function renderApp(){
   renderHead();
@@ -1275,7 +1355,7 @@ function setTab(t,quiet){
 function viewToday(){
   const key=todayKey(),rec=DB.hw[key],P=hasProg(key)?DB.prog:null;
   const plan=P?P.plan:todayPlan(),lay=planLayout(plan),done=rec?lay.length:(P?P.stg.length:0);
-  const total=lay.length?lay[lay.length-1].to:0,nm=CFG.name?esc(CFG.name):'친구';
+  const total=lay.length?lay[lay.length-1].to:0,nm=kidName()?esc(kidName()):'친구';
   const step=PACE[DB.grade][plan.idx];
   const inStage=P&&!rec&&done<lay.length?resArr(P.res).slice(lay[done].from,lay[done].to).filter(Boolean).length:0;
   const greet=rec?`${nm}야, 오늘 숙제 끝! 최고야!`:done?`${nm}야, 조금만 더 힘내자!`:`${nm}야, 오늘도 같이 풀자!`;
@@ -1367,6 +1447,7 @@ function renderSheet(){
    <div class="srow"><span>효과음</span><button type="button" class="sw" data-act="sfx" aria-pressed="${PREF.sfx}">${PREF.sfx?'켜짐':'꺼짐'}</button></div>
    <div class="srow"><span>배경음</span><button type="button" class="sw" data-act="bgm" aria-pressed="${PREF.bgm}">${PREF.bgm?'켜짐':'꺼짐'}</button></div>
    <button type="button" class="big alt" data-act="changeGrade">학년 바꾸기 (지금 ${DB.grade||'-'}학년)</button>
+   ${PROF.o.length>1?`<button type="button" class="big alt" data-act="toProfiles">프로필 바꾸기 (지금 ${esc(profName(PID))})</button>`:''}
    <button type="button" class="big alt" data-act="toParent">부모님 화면</button>
    <p class="pnote sheetsync">${syncText()}</p>
    <button type="button" class="big" data-act="closeSheet">닫기</button>`;
@@ -1595,6 +1676,7 @@ function renderParent(){
     return;
   }
   el.innerHTML=`<div class="phead"><button type="button" class="quit" data-act="pExit">← 아이 화면</button><div><h1>부모님 화면</h1><p class="psync">${syncText()}</p></div></div>
+    ${PROF.o.length>1||SYNC.admin?`<div class="ptabs" aria-label="프로필">${PROF.o.map(id=>`<button type="button" data-pf="${id}" aria-pressed="${id===PID}">${esc(profName(id))}</button>`).join('')}${SYNC.admin&&PROF.o.length<MAXP?'<button type="button" data-ptab="set" aria-label="프로필 추가">＋ 추가</button>':''}</div>`:''}
     <div class="ptabs" role="tablist"><button type="button" data-ptab="stat" aria-pressed="${S.ptab==='stat'}">아이 현황</button><button type="button" data-ptab="set" aria-pressed="${S.ptab==='set'}">진도 · 난이도 · 문항 설정</button></div>`+(S.ptab==='stat'?pStat():pSet());
 }
 const ustat=id=>{const s=DB.ustat[id]||'',n=s.length,f=[...s].filter(c=>c==='f').length,sc=[...s].filter(c=>c==='s').length;return {n,f,s:sc,x:n-f-sc,rate:n?f/n:0};};
@@ -1644,7 +1726,7 @@ function pStat(){
 }
 function pSet(){
   const g=DB.grade;
-  if(!g)return `<div class="panelbox"><h3>학년이 아직 정해지지 않았어요</h3><p class="pnote">아이 화면에서 학년을 먼저 골라 주세요.</p></div>`;
+  if(!g)return pProfiles()+`<div class="panelbox"><h3>학년이 아직 정해지지 않았어요</h3><p class="pnote">아이 기기에서 이 프로필을 골라 학년을 먼저 정해 주세요. 그 뒤에 진도·난이도 설정이 나와요.</p></div>`;
   const dis=SYNC.admin?'':' disabled',li=levelInfo(),plan=buildPlan(g,CFG,curMonth(),li.lv),idxAuto=paceStep(g,curMonth());
   const stepOpts=`<option value="auto"${CFG.pace==='auto'?' selected':''}>자동 · 오늘(${curMonth()}월) → ${esc(PACE[g][idxAuto].t)}</option>`+PACE[g].map((s,i)=>`<option value="${i}"${String(CFG.pace)===String(i)?' selected':''}>${i+1}단계 · ${monthsLabel(s.m)} · ${esc(s.t)}</option>`).join('');
   const cnt=(k,label,step)=>`<div class="srow"><span>${label}</span><span class="stepper"><button type="button" data-cnt="${k}" data-d="${-step}" aria-label="${label} 줄이기"${dis}>−</button><b>${CFG.counts[k]}</b><button type="button" data-cnt="${k}" data-d="${step}" aria-label="${label} 늘리기"${dis}>＋</button></span></div>`;
@@ -1659,7 +1741,7 @@ function pSet(){
   }).join('');
   const prev=['calc','logic','other'].map(c=>`<li><b>${CAT_NAME[c]} ${sumN(plan.alloc[c])}문제</b><span>${plan.alloc[c].map(x=>`${unitById(x.u).name} ${x.n}`).join(' · ')||'없음'}</span></li>`).join('');
   return `${SYNC.admin?'':'<div class="panelbox warn"><p class="pnote" style="margin:0">이 계정은 보기 전용이에요. 설정은 소유자나 편집자 계정에서만 바꿀 수 있어요.</p></div>'}
-  <div class="panelbox"><h3>아이 이름</h3><input id="pName" class="inp" type="text" maxlength="10" value="${esc(CFG.name)}" placeholder="예: 민준"${dis}><p class="pnote">아이 화면 인사말에 쓰여요.</p></div>
+  ${pProfiles()}
   <div class="panelbox"><h3>난이도</h3><div class="seg4">${[['auto','자동'],['1','쉬움'],['2','보통'],['3','어려움']].map(([v,t])=>`<button type="button" data-lv="${v}" aria-pressed="${String(CFG.lv)===v}"${dis}>${t}</button>`).join('')}</div>
     <p class="pnote">같은 단원 안에서 숫자가 작은 문제(쉬움) 또는 큰 문제(어려움) 위주로 나와요. ‘자동’은 최근 3일 숙제에서 한 번에 맞힌 비율이 88% 이상이면 한 단계 올리고, 65% 미만이면 내려요.<br>지금 적용: <b>${LV_NAME[li.lv]}</b>${li.auto?(li.rate==null?' (기록이 없어 보통으로 시작)':` (최근 ${li.n}일 ${Math.round(li.rate*100)}%)`):''}</p></div>
   <div class="panelbox"><h3>학교 진도</h3><select id="pPace" class="inp"${dis}>${stepOpts}</select><p class="pnote">지금 배우는 단원이 숙제의 대부분을 차지하고, 앞서 배운 연산 단원은 복습으로 조금 섞여요. 진도는 교과서 단원 순서를 바탕으로 한 대략적인 시기예요. 학교 진도와 다르면 단계를 직접 고르세요.</p></div>
@@ -1670,6 +1752,19 @@ function pSet(){
     <div class="rbtns" style="justify-content:flex-start"><button type="button" class="mini-btn" data-act="pinSave"${dis}>${CFG.pin?'번호 바꾸기':'잠금 켜기'}</button>${CFG.pin?`<button type="button" class="mini-btn" data-act="pinOff"${dis}>잠금 끄기</button>`:''}</div>
     <p class="pnote">아이가 실수로 여는 것을 막는 가벼운 잠금이에요. 보안 기능은 아니니, 아이 기기는 보기 전용 권한으로 공유하는 것이 가장 안전해요.</p></div>`;
 }
+function addProfile(name){
+  if(!SYNC.admin||PROF.o.length>=MAXP)return '';
+  const id='p'+Date.now().toString(36);
+  PROF.list[id]={n:name};PROF.o.push(id);saveProf();return id;
+}
+function pProfiles(){
+  const dis=SYNC.admin?'':' disabled';
+  return `<div class="panelbox"><h3>프로필<small>${PROF.o.length}/${MAXP}</small></h3>
+   <label class="pnote" for="pName" style="margin:0">지금 보고 있는 프로필 이름 (아이 화면 인사말에 쓰여요)</label>
+   <input id="pName" class="inp" type="text" maxlength="10" value="${esc(PROF.list[PID]&&PROF.list[PID].n||'')}" placeholder="예: 민준"${dis}>
+   ${PROF.o.length<MAXP?`<div class="frow" style="margin-top:12px"><input id="pNewName" class="inp" type="text" maxlength="10" placeholder="새 프로필 이름" aria-label="새 프로필 이름"${dis}><button type="button" class="mini-btn" data-act="addProf"${dis}>추가</button></div>`:''}
+   ${PROF.o.length>1?`<button type="button" class="mini-btn" data-act="delProf"${dis} style="margin-top:10px">${S.delArm===PID?'정말 목록에서 뺄까요? 한 번 더 누르세요':'이 프로필 목록에서 빼기'}</button><p class="pnote">목록에서만 빠지고 저장된 기록은 지워지지 않아요.</p>`:''}</div>`;
+}
 function cfgChanged(){saveCfg();renderParent();}
 
 /* ===== 이벤트 ===== */
@@ -1679,13 +1774,17 @@ function route(){
 }
 window.addEventListener('hashchange',()=>{
   if(location.hash==='#parent'){closeSheet();renderParent();show('parent');}
-  else if(document.body.dataset.screen==='parent'){DB.grade?enterApp():toIntro();}
+  else if(document.body.dataset.screen==='parent'){leaveParent();}
 });
 document.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   if(!AU.ctx){audio();if(PREF.bgm)bgmStart();}
   const act=t.dataset.act;
   if(t.dataset.tab){setTab(t.dataset.tab);}
+  else if(t.dataset.pf){
+    if(document.body.dataset.screen==='parent'){S.delArm='';loadProfile(t.dataset.pf);renderParent();}
+    else{setKid(t.dataset.pf);play('start');DB.grade?enterApp('today'):toGrades();}
+  }
   else if(t.dataset.g){
     DB.grade=+t.dataset.g;if(!DB.start)DB.start=todayKey();save();
     closeSheet();play('start');enterApp('today');
@@ -1715,13 +1814,34 @@ document.addEventListener('click',e=>{
   }
   else if(act){
     switch(act){
-      case 'start':play('start');DB.grade?enterApp('today'):toGrades();break;
+      case 'start':play('start');if(PROF.o.length>1&&!KIDCHOSEN)toProfiles();else DB.grade?enterApp('today'):toGrades();break;
+      case 'toProfiles':closeSheet();play('tap');toProfiles();break;
+      case 'addProfKid':{
+        const v=(($('#newProfName')||{}).value||'').trim().slice(0,10);
+        if(!v){const i=$('#newProfName');if(i){i.placeholder='이름을 적어 주세요';i.focus();}break;}
+        const id=addProfile(v);if(id){setKid(id);play('start');toGrades();}
+        break;
+      }
+      case 'addProf':{
+        const v=(($('#pNewName')||{}).value||'').trim().slice(0,10);
+        if(!v){const i=$('#pNewName');if(i){i.placeholder='이름을 적어 주세요';i.focus();}break;}
+        const id=addProfile(v);if(id){loadProfile(id);S.ptab='set';renderParent();}
+        break;
+      }
+      case 'delProf':{
+        if(!SYNC.admin||PROF.o.length<2)break;
+        if(!S.delArm){S.delArm=PID;renderParent();break;}
+        S.delArm='';const gone=PID;
+        delete PROF.list[gone];PROF.o=PROF.o.filter(x=>x!==gone);saveProf();
+        if(KIDP===gone){KIDP=PROF.o[0];try{localStorage.setItem(ACTK,KIDP);}catch(x){}}
+        loadProfile(PROF.o[0]);renderParent();break;
+      }
       case 'changeGrade':closeSheet();play('tap');toGrades();break;
       case 'toIntro':play('back');toIntro();break;
       case 'sheet':play('tap');openSheet();break;
       case 'closeSheet':closeSheet();break;
       case 'toParent':closeSheet();location.hash='parent';break;
-      case 'pExit':location.hash='';if(document.body.dataset.screen==='parent'){DB.grade?enterApp():toIntro();}break;
+      case 'pExit':location.hash='';if(document.body.dataset.screen==='parent'){leaveParent();}break;
       case 'sfx':PREF.sfx=!PREF.sfx;savePref();renderSheet();play('tap');break;
       case 'bgm':PREF.bgm=!PREF.bgm;savePref();if(PREF.bgm)bgmStart();else bgmStop();renderSheet();break;
       case 'hw':startHomework();break;
@@ -1770,7 +1890,7 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   const id=e.target.id;
   if(id==='goalCost'){DB.goal.cost=+e.target.value;S.arm=false;save();renderApp();}
-  else if(id==='pName'){CFG.name=e.target.value.trim().slice(0,10);saveCfg();}
+  else if(id==='pName'&&SYNC.admin){const v=e.target.value.trim().slice(0,10);PROF.list[PID]=Object.assign({},PROF.list[PID],{n:v});saveProf();renderParent();}
   else if(id==='pPace'){CFG.pace=e.target.value;cfgChanged();}
 });
 document.addEventListener('keydown',e=>{
@@ -1786,7 +1906,7 @@ document.addEventListener('keydown',e=>{
     else if(S.slots.length&&S.slots.every(x=>x))submit(S.slots.join(''));
   }
 });
-window.addEventListener('pagehide',()=>{if(SYNC.db&&SYNC.canWrite){SYNC.dirty.progress=true;flush();}});
+window.addEventListener('pagehide',()=>{if(SYNC.db&&SYNC.canWrite)flush();});
 if(!route()){renderIntro();show('intro');}
 initShared();
 
