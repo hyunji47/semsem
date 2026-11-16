@@ -518,6 +518,13 @@ body[data-screen="parent"] .wrap{max-width:1120px}
   .urow{grid-template-columns:minmax(0,1fr) auto}
   .urow .ur{grid-column:1/-1;order:3}
 }
+
+/* ===== 쉬는 날(주말·공휴일) ===== */
+.cd.rest{background:var(--sky-t);border-color:var(--grid)}
+.cd.rest span{color:var(--soft)}
+.cd.today.rest{background:var(--sun-t);border-color:var(--edge)}
+.wd.rest i{background:var(--sky-t);border-style:dashed;font-size:.7rem;color:var(--soft)}
+.b14.rest i{background:var(--sky-t)}
 </style>
 
 <div class="wrap">
@@ -1069,6 +1076,11 @@ const ymd=d=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
 const fromKey=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d);};
 const addDays=(k,n)=>{const d=fromKey(k);d.setDate(d.getDate()+n);return ymd(d);};
 const todayKey=()=>ymd(new Date());
+/* 쉬는 날: 주말 + 공휴일(대체공휴일 포함). 숙제를 안 해도 '미완료'가 아니고 연속 일수가 끊기지 않는다.
+   공휴일은 2026~2027년분만 들어 있다 (이후에는 주말만 쉬는 날). */
+const HOLI=new Set(['2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-02','2026-05-05','2026-05-25','2026-06-03','2026-06-06','2026-07-17','2026-08-17','2026-09-24','2026-09-25','2026-09-26','2026-10-05','2026-10-09','2026-12-25',
+  '2027-01-01','2027-02-08','2027-02-09','2027-03-01','2027-05-05','2027-05-13','2027-07-19','2027-08-16','2027-09-14','2027-09-15','2027-09-16','2027-10-04','2027-10-11','2027-12-27']);
+const isRest=k=>{const w=fromKey(k).getDay();return w===0||w===6||HOLI.has(k);};
 const curMonth=()=>new Date().getMonth()+1;
 const DOW=['일','월','화','수','목','금','토'];
 const dateLabel=k=>{const d=fromKey(k);return `${d.getMonth()+1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일`;};
@@ -1241,13 +1253,14 @@ const TIERS=[[30,'🎈','풍선'],[80,'🍭','사탕'],[160,'🚀','로켓'],[26
 const balance=()=>DB.earned-DB.spent;
 const stickerCount=()=>TIERS.filter(t=>t[0]<=DB.earned).length;
 const tiersBetween=(a,b)=>TIERS.filter(t=>t[0]>a&&t[0]<=b);
-function streakFrom(k){let n=0;while(DB.hw[k]){n++;k=addDays(k,-1);}return n;}
+function streakFrom(k){let n=0,g=0;while(g++<400){if(DB.hw[k])n++;else if(!isRest(k))break;k=addDays(k,-1);}return n;}
 function streakNow(){const k=todayKey();return streakFrom(DB.hw[k]?k:addDays(k,-1));}
 function starsOf(f,s2,total){const pr=(f+s2*.5)/Math.max(1,total);return pr>=.9?3:pr>=.7?2:pr>=.5?1:0;}
 function dayStatus(k){
   if(DB.hw[k])return 'done';
   const t=todayKey();
   if(k===t)return 'today';
+  if(isRest(k))return 'rest';
   if(k>t)return 'future';
   return DB.start&&k>=DB.start?'miss':'none';
 }
@@ -1422,18 +1435,18 @@ function viewToday(){
   const total=lay.length?lay[lay.length-1].to:0,nm=kidName()?esc(kidName()):'친구';
   const step=PACE[DB.grade][plan.idx];
   const inStage=P&&!rec&&done<lay.length?resArr(P.res).slice(lay[done].from,lay[done].to).filter(Boolean).length:0;
-  const greet=rec?`${nm}야, 오늘 숙제 끝! 최고야!`:done?`${nm}야, 조금만 더 힘내자!`:`${nm}야, 오늘도 같이 풀자!`;
+  const greet=rec?`${nm}야, 오늘 숙제 끝! 최고야!`:done?`${nm}야, 조금만 더 힘내자!`:isRest(key)?`${nm}야, 오늘은 쉬는 날! 하고 싶으면 해도 좋아요`:`${nm}야, 오늘도 같이 풀자!`;
   const nodes=lay.map((L,i)=>{
     const st=i<done?'done':(i===done?'cur':'lock'),g=P&&P.stg[i];
     return `<div class="node ${st}"><span class="orb" aria-hidden="true">${st==='done'?'★':L.icon}</span><b>${i+1}판</b><small>${L.name}</small>${st==='done'&&g?`<i class="nst">${'★'.repeat(g.st)}</i>`:'<i class="nst"></i>'}</div>`;
   }).join('<span class="dash" aria-hidden="true"></span>');
   const cta=rec
     ?`<div class="donebox"><span class="tick">✓</span><div><b>오늘 숙제를 끝냈어요!</b><small>코인 +${rec.c+rec.b} · 별 ${'★'.repeat(rec.st)}${'☆'.repeat(3-rec.st)}</small></div></div><button type="button" class="big alt" data-tab="practice">자유 연습하러 가기</button>`
-    :`<button type="button" class="big go" data-act="hw">${done?`${done+1}판 이어서 하기!`:'1판 시작!'}</button><p class="hwsum center">${inStage?`${done+1}판은 ${inStage}문제까지 풀었어요. `:''}쉬었다가 이어서 해도 괜찮아요. 다 끝내면 10코인!</p>`;
+    :`<button type="button" class="big go" data-act="hw">${done?`${done+1}판 이어서 하기!`:'1판 시작!'}</button><p class="hwsum center">${inStage?`${done+1}판은 ${inStage}문제까지 풀었어요. `:''}쉬었다가 이어서 해도 괜찮아요. 다 끝내면 10코인!${isRest(key)?'<br>오늘은 쉬는 날이라 안 해도 연속 기록이 이어져요.':''}</p>`;
   const sk=streakNow(),nx=TIERS.find(t=>t[0]>DB.earned),pv=[...TIERS].reverse().find(t=>t[0]<=DB.earned),lo=pv?pv[0]:0;
   const pct=nx?Math.round((DB.earned-lo)/(nx[0]-lo)*100):100;
   const d=fromKey(key),wk=Array.from({length:7},(_,i)=>addDays(key,i-d.getDay()));
-  const week=wk.map(k=>{const st=dayStatus(k);return `<div class="wd ${st}"><i>${st==='done'?'★':st==='miss'?'·':''}</i>${DOW[fromKey(k).getDay()]}</div>`;}).join('');
+  const week=wk.map(k=>{const st=dayStatus(k);return `<div class="wd ${st}"><i>${st==='done'?'★':st==='miss'?'·':st==='rest'?'쉼':''}</i>${DOW[fromKey(k).getDay()]}</div>`;}).join('');
   return `<div class="hero"><div class="hm">${mascot()}</div><div class="hbub">${greet}</div></div>
   <div class="hwcard"><div class="hwtop"><div><small>${dateLabel(key)}</small><h2>오늘의 숙제</h2></div><span class="gbadge">${total}문제</span></div>
     <div class="trail" aria-label="오늘의 숙제 ${lay.length}판">${nodes}</div>${cta}
@@ -1466,6 +1479,7 @@ function dayDetail(k){
     const P=hasProg(k)?DB.prog:null,n=P?[...P.res].filter(c=>c!=='-').length:0;
     body=n?`<p><b>${n}문제까지 풀었어요.</b></p><button type="button" class="big" data-act="goToday">이어서 하러 가기</button>`:'<p>오늘 숙제를 아직 안 했어요.</p><button type="button" class="big" data-act="goToday">숙제하러 가기</button>';
   }
+  else if(st==='rest')body='<p>쉬는 날이에요. (주말·공휴일) 숙제를 안 해도 괜찮아요.</p>';
   else if(st==='miss')body='<p>이 날은 숙제를 하지 않았어요.</p>';
   else if(st==='future')body='<p>아직 오지 않은 날이에요.</p>';
   else body='<p>기록이 없어요.</p>';
@@ -1478,12 +1492,12 @@ function viewCal(){
   for(let d=1;d<=dim;d++){
     const k=`${y}-${pad2(m+1)}-${pad2(d)}`,st=dayStatus(k),r=DB.hw[k];
     if(r){coins+=r.c+r.b;doneN++;}
-    const mark=st==='done'?`+${r.c+r.b}`:st==='today'?'오늘':st==='miss'?'미완료':'';
+    const mark=st==='done'?`+${r.c+r.b}`:st==='today'?'오늘':st==='miss'?'미완료':st==='rest'?'쉬는 날':'';
     cells+=`<button type="button" class="cd ${st}${k===S.sel?' sel':''}" data-day="${k}" aria-label="${m+1}월 ${d}일 ${mark}"><b>${d}</b><span>${mark}</span></button>`;
   }
   return `<div class="cal"><div class="calhead"><button type="button" class="calnav" data-cal="-1" aria-label="이전 달">‹</button><h2>${y}년 ${m+1}월</h2><button type="button" class="calnav" data-cal="1" aria-label="다음 달">›</button></div>
     <div class="calgrid">${DOW.map(d=>`<span class="dow">${d}</span>`).join('')}${cells}</div>
-    <div class="legend"><span><i style="background:var(--mint-t)"></i>숙제 완료</span><span><i style="background:var(--coral-t)"></i>미완료</span></div></div>
+    <div class="legend"><span><i style="background:var(--mint-t)"></i>숙제 완료</span><span><i style="background:var(--coral-t)"></i>미완료</span><span><i style="background:var(--sky-t)"></i>쉬는 날(주말·공휴일)</span></div></div>
   <div class="stats"><div class="stat"><b>${doneN}</b><small>이달 완료</small></div><div class="stat"><b>${coins}</b><small>이달 숙제 코인</small></div><div class="stat"><b>${streakNow()}</b><small>연속 일수</small></div></div>
   ${dayDetail(S.sel||todayKey())}`;
 }
@@ -1757,10 +1771,10 @@ function pStat(){
   const answered=P?[...P.res].filter(c=>c!=='-').length:0;
   const todayTxt=rec?`완료 · 별 ${rec.st}개`:P?`${P.stg.length}/${lay.length}판 · ${answered}/${total}문제`:'아직 시작 전';
   const days=Array.from({length:14},(_,i)=>addDays(key,i-13));
-  const done14=days.filter(k=>DB.hw[k]),wkDone=days.slice(7).filter(k=>DB.hw[k]).length;
+  const done14=days.filter(k=>DB.hw[k]),wkDone=days.slice(7).filter(k=>DB.hw[k]).length,req7=days.slice(7).filter(k=>!isRest(k)||DB.hw[k]).length;
   const rate7=(()=>{const a=days.slice(7).filter(k=>DB.hw[k]);return a.length?Math.round(a.reduce((s,k)=>s+DB.hw[k].f/Math.max(1,DB.hw[k].t),0)/a.length*100):null;})();
   const li=levelInfo();
-  const tiles=`<div class="ptiles"><div class="stat"><small>오늘</small><b class="sm">${todayTxt}</b></div><div class="stat"><small>연속 숙제</small><b>${streakNow()}일</b></div><div class="stat"><small>최근 7일 완료</small><b>${wkDone}/7</b></div><div class="stat"><small>최근 7일 한 번에 맞힘</small><b>${rate7==null?'-':rate7+'%'}</b></div></div>`;
+  const tiles=`<div class="ptiles"><div class="stat"><small>오늘</small><b class="sm">${todayTxt}</b></div><div class="stat"><small>연속 숙제</small><b>${streakNow()}일</b></div><div class="stat"><small>최근 7일 완료 (쉬는 날 제외)</small><b>${wkDone}/${req7}</b></div><div class="stat"><small>최근 7일 한 번에 맞힘</small><b>${rate7==null?'-':rate7+'%'}</b></div></div>`;
   const chart=`<div class="panelbox"><h3>최근 14일<small>막대 = 한 번에 맞힌 비율</small></h3><div class="bars14">${days.map(k=>{
     const r=DB.hw[k],st=dayStatus(k),p=r?Math.round(r.f/Math.max(1,r.t)*100):0,d=fromKey(k);
     return `<div class="b14 ${st}" title="${dateLabel(k)}${r?` · ${p}%`:''}"><em>${r?p:''}</em><i style="height:${r?Math.max(6,p):0}%"></i><span>${d.getMonth()+1}/${d.getDate()}</span></div>`;}).join('')}</div>
