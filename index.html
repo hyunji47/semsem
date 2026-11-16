@@ -590,63 +590,71 @@ button.tier:active{transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
 button.tier.on .em{display:inline-block;animation:stkHint 2.4s ease-in-out infinite}
 @keyframes stkHint{0%,70%,100%{transform:none}80%{transform:scale(1.18) rotate(-6deg)}90%{transform:scale(1.1) rotate(6deg)}}
 .stkwrap{align-items:center;padding:16px;z-index:60}
-.stkbox{position:relative;width:min(100%,380px);background:var(--card);color:var(--ink);border:3px solid var(--edge);border-radius:26px;padding:14px;display:grid;gap:10px;text-align:center;box-shadow:0 8px 0 var(--shadow);animation:stkPop .35s cubic-bezier(.2,1.4,.4,1)}
-.stkbox h2{font:1.5rem/1.2 var(--font-d);margin:0}
+.stkbox{position:relative;width:min(100%,380px);background:var(--card);color:var(--ink);border:3px solid var(--edge);border-radius:26px;padding:14px;display:grid;gap:10px;text-align:center;box-shadow:0 8px 0 var(--shadow);animation:stkPop .4s cubic-bezier(.2,1.5,.4,1)}
+.stkbox h2{font:1.6rem/1.2 var(--font-d);margin:0;animation:stkTitle .6s .3s cubic-bezier(.2,1.5,.4,1) both}
 .stkbox .pnote{margin:0}
-.stkbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stkbtns{display:grid;gap:10px}
 .stkbtns .big{width:100%;font-size:1.05rem}
-@keyframes stkPop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
-.stk-stage{position:relative;height:230px;border:3px solid var(--edge);border-radius:20px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(#cfeaff,#f3faff)}
-.stk-m{font-size:6.2rem;line-height:1;display:block;will-change:transform;filter:drop-shadow(0 6px 4px rgba(0,0,0,.18))}
-.stk-p{position:absolute;font-size:1.5rem;line-height:1;pointer-events:none}
+@keyframes stkPop{from{transform:scale(.5) rotate(-4deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes stkTitle{from{transform:translateY(14px) scale(.6);opacity:0}to{transform:none;opacity:1}}
+.stk-stage{position:relative;height:250px;border:3px solid var(--edge);border-radius:20px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(#cfeaff,#f3faff)}
+.stk-rays{position:absolute;left:50%;top:50%;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.7) 0 9deg,transparent 9deg 18deg);-webkit-mask-image:radial-gradient(circle,#000 0,transparent 68%);mask-image:radial-gradient(circle,#000 0,transparent 68%);animation:stkRays 9s linear infinite;pointer-events:none}
+@keyframes stkRays{to{transform:rotate(360deg)}}
+.stk-w{position:relative;display:grid;place-items:center;animation:stkEnter .9s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes stkEnter{0%{transform:scale(0) rotate(-220deg);opacity:0}55%{transform:scale(1.5) rotate(14deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.stk-m{font-size:6.6rem;line-height:1;display:block;will-change:transform;filter:drop-shadow(0 8px 5px rgba(0,0,0,.2))}
+.stk-p{position:absolute;font-size:calc(1.5rem*var(--s,1));line-height:1;pointer-events:none}
+.stk-c{position:absolute;top:-16px;left:calc(var(--i)*6.4% + 1%);width:8px;height:14px;border-radius:2px;background:hsl(calc(var(--i)*47),92%,60%);animation:stkConf calc(2.1s + var(--i)*.06s) linear infinite;animation-delay:calc(var(--i)*-.31s);pointer-events:none}
+@keyframes stkConf{0%{transform:translateY(0) rotate(0) rotateY(0)}100%{transform:translateY(290px) rotate(600deg) rotateY(540deg)}}
 /* 배경 */
-.stk-stage.candy{background:linear-gradient(#ffd6ea,#fff1f8)}
-.stk-stage.rocket{background:linear-gradient(#10163a,#2f3f93)}
-.stk-stage.unicorn{background:linear-gradient(#e6d6ff,#fff0fb)}
-.stk-stage.dolphin{background:linear-gradient(#9fdcff,#e2f6ff)}
-.stk-stage.medal{background:linear-gradient(#fff0b8,#fffbe8)}
-.stk-stage.rainbow{background:linear-gradient(#a9dcff,#effaff)}
-.stk-stage.trophy{background:linear-gradient(#ffe3b0,#fff6e2)}
-.stk-stage.crown{background:linear-gradient(#d9ccff,#f6f0ff)}
-.stk-stage.star{background:linear-gradient(#0d1233,#2b2f7a)}
+.stk-stage.candy{background:linear-gradient(#ffc4e2,#fff1f8)}
+.stk-stage.rocket{background:linear-gradient(#0a0f30,#2f3f93)}
+.stk-stage.unicorn{background:linear-gradient(#dcc8ff,#fff0fb)}
+.stk-stage.dolphin{background:linear-gradient(#7fd0ff,#e2f6ff)}
+.stk-stage.medal{background:linear-gradient(#ffe48a,#fffbe8)}
+.stk-stage.rainbow{background:linear-gradient(#8fd2ff,#effaff)}
+.stk-stage.trophy{background:linear-gradient(#ffd68a,#fff6e2)}
+.stk-stage.crown{background:linear-gradient(#cdbcff,#f6f0ff)}
+.stk-stage.star{background:linear-gradient(#070b26,#2b2f7a)}
+.rocket .stk-rays,.star .stk-rays{background:repeating-conic-gradient(rgba(255,255,255,.22) 0 9deg,transparent 9deg 18deg)}
 /* 본체 모션 */
-.balloon .stk-m{animation:stkFloat 2.6s ease-in-out infinite}
-.candy .stk-m{animation:stkSpin 2.8s ease-in-out infinite}
-.rocket .stk-m{animation:stkLaunch 3.4s ease-in infinite}
-.unicorn .stk-m{animation:stkGallop .9s ease-in-out infinite}
-.dolphin .stk-m{animation:stkJump 2.6s ease-in-out infinite}
-.medal .stk-m{animation:stkSwing 2.2s ease-in-out infinite;transform-origin:50% -25%}
-.rainbow .stk-m{animation:stkReveal 3.6s ease-in-out infinite}
-.trophy .stk-m{animation:stkLift 2.2s ease-in-out infinite}
-.crown .stk-m{animation:stkDrop 3.2s ease-in-out infinite}
-.star .stk-m{animation:stkStar 3s ease-in-out infinite}
-@keyframes stkFloat{0%,100%{transform:translateY(14px) rotate(-6deg)}50%{transform:translateY(-16px) rotate(6deg)}}
-@keyframes stkSpin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.22)}100%{transform:rotate(360deg) scale(1)}}
-@keyframes stkLaunch{0%{transform:translate(0,0)}5%{transform:translate(-4px,3px)}10%{transform:translate(4px,-3px)}15%{transform:translate(-4px,-3px)}20%{transform:translate(0,0)}60%{transform:translate(130px,-200px) scale(.7);opacity:1}61%{transform:translate(-130px,200px);opacity:0}70%{opacity:1;transform:translate(-110px,170px)}100%{transform:translate(0,0)}}
-@keyframes stkGallop{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-28px) rotate(5deg)}}
-@keyframes stkJump{0%{transform:translate(-100px,55px) rotate(-60deg)}50%{transform:translate(0,-60px) rotate(0)}100%{transform:translate(100px,55px) rotate(60deg)}}
-@keyframes stkSwing{0%,100%{transform:rotate(-24deg)}50%{transform:rotate(24deg)}}
-@keyframes stkReveal{0%{clip-path:inset(0 100% 0 0);transform:scale(.85)}45%{clip-path:inset(0 0 0 0);transform:scale(1.08)}85%{clip-path:inset(0 0 0 0);transform:scale(1.08)}100%{clip-path:inset(0 0 0 100%);transform:scale(1.08)}}
-@keyframes stkLift{0%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-30px) scale(1.18) rotate(-7deg)}60%{transform:translateY(-30px) scale(1.18) rotate(7deg)}80%{transform:translateY(3px) scale(.95)}}
-@keyframes stkDrop{0%{transform:translateY(-190px) rotate(-28deg);opacity:0}15%{opacity:1}35%{transform:translateY(0) rotate(9deg)}45%{transform:translateY(-16px) rotate(-5deg)}55%{transform:translateY(0) rotate(0)}85%{transform:translateY(0) rotate(0) scale(1.06)}100%{transform:translateY(0) rotate(0) scale(1)}}
-@keyframes stkStar{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.25)}100%{transform:rotate(360deg) scale(1)}}
+.balloon .stk-m{animation:stkFloat 1.7s ease-in-out infinite}
+.candy .stk-m{animation:stkSpin 1.5s cubic-bezier(.5,0,.3,1) infinite}
+.rocket .stk-m{animation:stkLaunch 2.6s ease-in infinite}
+.unicorn .stk-m{animation:stkGallop 1.1s ease-in-out infinite}
+.dolphin .stk-m{animation:stkJump 1.9s ease-in-out infinite}
+.medal .stk-m{animation:stkSwing 1.5s ease-in-out infinite;transform-origin:50% -22%}
+.rainbow .stk-m{animation:stkReveal 2.6s cubic-bezier(.3,1.4,.5,1) infinite}
+.trophy .stk-m{animation:stkLift 1.7s ease-in-out infinite}
+.crown .stk-m{animation:stkDrop 2.4s ease-in-out infinite}
+.star .stk-m{animation:stkStar 2s ease-in-out infinite}
+@keyframes stkFloat{0%,100%{transform:translateY(22px) rotate(-10deg) scale(.95)}50%{transform:translateY(-28px) rotate(10deg) scale(1.12)}}
+@keyframes stkSpin{0%{transform:rotate(0) scale(1) translateY(0)}40%{transform:rotate(200deg) scale(1.4) translateY(-14px)}70%{transform:rotate(330deg) scale(.9) translateY(6px)}100%{transform:rotate(360deg) scale(1) translateY(0)}}
+@keyframes stkLaunch{0%{transform:translate(0,0)}4%{transform:translate(-5px,4px)}8%{transform:translate(5px,-4px)}12%{transform:translate(-5px,-3px)}16%{transform:translate(5px,3px)}20%{transform:translate(0,0) scale(1.05)}58%{transform:translate(150px,-230px) scale(.6) rotate(8deg);opacity:1}59%{transform:translate(-150px,230px);opacity:0}68%{opacity:1;transform:translate(-120px,180px)}100%{transform:translate(0,0)}}
+@keyframes stkGallop{0%{transform:translate(-16px,0) rotate(-7deg)}25%{transform:translate(0,-38px) rotate(5deg)}50%{transform:translate(16px,0) rotate(7deg)}75%{transform:translate(0,-38px) rotate(-5deg)}100%{transform:translate(-16px,0) rotate(-7deg)}}
+@keyframes stkJump{0%{transform:translate(-130px,70px) rotate(-70deg) scale(.9)}50%{transform:translate(0,-80px) rotate(0) scale(1.2)}100%{transform:translate(130px,70px) rotate(70deg) scale(.9)}}
+@keyframes stkSwing{0%,100%{transform:rotate(-32deg) scale(1)}50%{transform:rotate(32deg) scale(1.15)}}
+@keyframes stkReveal{0%{clip-path:inset(0 100% 0 0);transform:scale(.7)}45%{clip-path:inset(0 0 0 0);transform:scale(1.25)}80%{clip-path:inset(0 0 0 0);transform:scale(1.12)}100%{clip-path:inset(0 0 0 100%);transform:scale(1.12)}}
+@keyframes stkLift{0%,100%{transform:translateY(0) scale(1) rotate(0)}25%{transform:translateY(-42px) scale(1.25) rotate(-9deg)}50%{transform:translateY(-42px) scale(1.25) rotate(9deg)}70%{transform:translateY(-42px) scale(1.25) rotate(-6deg)}85%{transform:translateY(4px) scale(.92)}}
+@keyframes stkDrop{0%{transform:translateY(-230px) rotate(-35deg) scale(.7);opacity:0;filter:drop-shadow(0 0 0 gold)}12%{opacity:1}30%{transform:translateY(0) rotate(12deg) scale(1.15)}40%{transform:translateY(-26px) rotate(-6deg)}50%{transform:translateY(0) rotate(0) scale(1)}60%{transform:translateY(-10px)}70%,100%{transform:translateY(0) rotate(0) scale(1);filter:drop-shadow(0 0 22px gold)}}
+@keyframes stkStar{0%{transform:rotate(0) scale(1)}50%{transform:rotate(200deg) scale(1.55)}100%{transform:rotate(360deg) scale(1)}}
 /* 입자 */
-.fx-rise .stk-p{left:var(--x);bottom:-30px;font-size:1.7rem;animation:stkRise 3.4s linear infinite;animation-delay:calc(var(--i)*-.7s)}
-@keyframes stkRise{0%{transform:translateY(0) rotate(-8deg);opacity:0}15%{opacity:1}100%{transform:translateY(-270px) rotate(10deg);opacity:0}}
-.fx-burst .stk-p{left:50%;top:50%;--a:calc(var(--i)*360deg/var(--n));animation:stkBurst 2.2s ease-out infinite;animation-delay:calc(var(--i)*.28s)}
-@keyframes stkBurst{0%{transform:translate(-50%,-50%) rotate(var(--a)) translateX(10px) scale(.3);opacity:0}20%{opacity:1}100%{transform:translate(-50%,-50%) rotate(var(--a)) translateX(105px) scale(1.1);opacity:0}}
-.fx-fall .stk-p{left:calc(36% + var(--i)*7%);top:56%;animation:stkFall 1.3s ease-out infinite;animation-delay:calc(var(--i)*.22s)}
-@keyframes stkFall{0%{transform:translateY(0) scale(.5);opacity:0}20%{opacity:1}100%{transform:translateY(120px) scale(1.5);opacity:0}}
-.fx-bubble .stk-p{left:var(--x);bottom:24px;font-size:1.3rem;animation:stkRise 2.6s ease-in infinite;animation-delay:calc(var(--i)*-.5s)}
-.dolphin::after{content:"🌊🌊🌊🌊🌊🌊";position:absolute;left:-14px;bottom:-8px;font-size:2.2rem;letter-spacing:.05em;white-space:nowrap;animation:stkWave 1.5s ease-in-out infinite alternate}
-@keyframes stkWave{from{transform:translateX(0)}to{transform:translateX(-18px)}}
-.fx-twinkle .stk-p{left:var(--x);top:var(--y);animation:stkTwinkle 1.6s ease-in-out infinite;animation-delay:calc(var(--i)*.3s)}
-@keyframes stkTwinkle{0%,100%{transform:scale(.2) rotate(0);opacity:0}50%{transform:scale(1.4) rotate(40deg);opacity:1}}
-.fx-drift .stk-p{top:var(--y);left:-20%;font-size:2.2rem;animation:stkDrift 7s linear infinite;animation-delay:calc(var(--i)*-2.3s)}
-@keyframes stkDrift{from{transform:translateX(0)}to{transform:translateX(480px)}}
-.fx-orbit .stk-p{left:50%;top:50%;animation:stkOrbit 4s linear infinite;animation-delay:calc(var(--i)*-4s/var(--n))}
-@keyframes stkOrbit{from{transform:translate(-50%,-50%) rotate(0) translateX(92px) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg) translateX(92px) rotate(-360deg)}}
-@media (prefers-reduced-motion:reduce){.stk-stage .stk-m,.stk-stage .stk-p,.dolphin::after,button.tier.on .em,.stkbox{animation:none!important}.stk-p{display:none}}
+.fx-rise .stk-p{left:var(--x);bottom:-34px;font-size:calc(1.9rem*var(--s,1));animation:stkRise 2.4s linear infinite;animation-delay:calc(var(--i)*-.4s)}
+@keyframes stkRise{0%{transform:translateY(0) rotate(-12deg);opacity:0}12%{opacity:1}100%{transform:translateY(-300px) rotate(14deg);opacity:0}}
+.fx-burst .stk-p{left:50%;top:50%;--a:calc(var(--i)*360deg/var(--n));animation:stkBurst 1.5s ease-out infinite;animation-delay:calc(var(--i)*.19s)}
+@keyframes stkBurst{0%{transform:translate(-50%,-50%) rotate(var(--a)) translateX(10px) scale(.2);opacity:0}15%{opacity:1}100%{transform:translate(-50%,-50%) rotate(var(--a)) translateX(135px) scale(1.3);opacity:0}}
+.fx-fall .stk-p{left:calc(30% + var(--i)*7%);top:54%;animation:stkFall .9s ease-out infinite;animation-delay:calc(var(--i)*.15s)}
+@keyframes stkFall{0%{transform:translateY(0) scale(.5);opacity:0}20%{opacity:1}100%{transform:translateY(140px) scale(1.6);opacity:0}}
+.fx-bubble .stk-p{left:var(--x);bottom:30px;font-size:calc(1.4rem*var(--s,1));animation:stkRise 1.9s ease-in infinite;animation-delay:calc(var(--i)*-.3s)}
+.dolphin::after{content:"🌊🌊🌊🌊🌊🌊";position:absolute;left:-14px;bottom:-8px;font-size:2.4rem;letter-spacing:.05em;white-space:nowrap;animation:stkWave .9s ease-in-out infinite alternate}
+@keyframes stkWave{from{transform:translateX(0) translateY(2px)}to{transform:translateX(-22px) translateY(-4px)}}
+.fx-twinkle .stk-p{left:var(--x);top:var(--y);animation:stkTwinkle 1.1s ease-in-out infinite;animation-delay:calc(var(--i)*.17s)}
+@keyframes stkTwinkle{0%,100%{transform:scale(.1) rotate(0);opacity:0}50%{transform:scale(1.7) rotate(60deg);opacity:1}}
+.fx-drift .stk-p{top:var(--y);left:-24%;font-size:calc(2.4rem*var(--s,1));animation:stkDrift 4.5s linear infinite;animation-delay:calc(var(--i)*-1.5s)}
+@keyframes stkDrift{from{transform:translateX(0)}to{transform:translateX(520px)}}
+.fx-orbit .stk-p{left:50%;top:50%;animation:stkOrbit 2.6s linear infinite;animation-delay:calc(var(--i)*-2.6s/var(--n))}
+@keyframes stkOrbit{from{transform:translate(-50%,-50%) rotate(0) translateX(100px) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg) translateX(100px) rotate(-360deg)}}
+@media (prefers-reduced-motion:reduce){.stk-stage *,.dolphin::after,button.tier.on .em,.stkbox,.stkbox h2{animation:none!important}.stk-p,.stk-c,.stk-rays{display:none}}
 .ptiles.mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
 .ptiles.mini .stat b{font-size:1.4rem}
 .panelbox h4.sub{font:1rem/1.2 var(--font-d);margin:12px 0 6px;color:var(--soft)}
@@ -1681,25 +1689,31 @@ function viewCal(){
 
 /* ===== 스티커 모션 팝업 ===== */
 const STK=[
- {k:'balloon',fx:'rise',p:['🎈','🎈','🎈','🎈','🎈'],msg:'둥실둥실 하늘로 떠올라요!'},
- {k:'candy',fx:'burst',p:['✨','🍬','✨','🍬','✨','🍬'],msg:'빙글빙글 달콤하게 돌아요!'},
- {k:'rocket',fx:'fall',p:['💨','💨','💨','🔥','💨'],msg:'부릉부릉 우주로 발사!'},
- {k:'unicorn',fx:'burst',p:['⭐','✨','🌈','⭐','✨','🌈'],msg:'반짝반짝 신나게 달려요!'},
- {k:'dolphin',fx:'bubble',p:['🫧','🫧','🫧','🫧','🫧'],msg:'첨벙! 파도를 넘어 점프해요!'},
- {k:'medal',fx:'twinkle',p:['✨','✨','✨','✨','✨'],msg:'반짝이는 금메달이 흔들려요!'},
- {k:'rainbow',fx:'drift',p:['☁️','☁️','☁️'],msg:'구름 사이로 무지개가 활짝!'},
- {k:'trophy',fx:'burst',p:['🎉','✨','🎊','✨','🎉','🎊'],msg:'우승! 트로피를 번쩍 들어요!'},
- {k:'crown',fx:'twinkle',p:['✨','💎','✨','💎','✨'],msg:'왕관이 사뿐히 내려앉아요!'},
- {k:'star',fx:'orbit',p:['⭐','✨','⭐','✨','⭐','✨'],msg:'별빛이 빙글빙글 돌아요!'}
+ {k:'balloon',fx:'rise',p:['🎈','🎈','🎈','🎈','🎈','🎈','🎈'],msg:'둥실둥실 하늘로 떠올라요!'},
+ {k:'candy',fx:'burst',p:['✨','🍬','🍭','✨','🍬','🍭','✨','🍬'],msg:'빙글빙글 달콤하게 돌아요!'},
+ {k:'rocket',fx:'fall',p:['💨','💨','🔥','💨','🔥','💨','💨'],msg:'부릉부릉 우주로 발사!'},
+ {k:'unicorn',fx:'burst',p:['⭐','✨','🌈','💖','⭐','✨','🌈','💖'],msg:'반짝반짝 신나게 달려요!'},
+ {k:'dolphin',fx:'bubble',p:['💦','🫧','💦','🫧','💦','🫧'],msg:'첨벙! 파도를 넘어 점프해요!'},
+ {k:'medal',fx:'twinkle',p:['✨','⭐','✨','⭐','✨','⭐','✨'],msg:'반짝이는 금메달이 흔들려요!'},
+ {k:'rainbow',fx:'drift',p:['☁️','☁️','☁️','☀️'],msg:'구름 사이로 무지개가 활짝!'},
+ {k:'trophy',fx:'burst',p:['🎉','✨','🎊','🎆','🎉','✨','🎊','🎆'],msg:'우승! 트로피를 번쩍 들어요!'},
+ {k:'crown',fx:'twinkle',p:['✨','💎','✨','💎','✨','💎','✨'],msg:'왕관이 사뿐히 내려앉아요!'},
+ {k:'star',fx:'orbit',p:['⭐','✨','⭐','✨','⭐','✨','⭐','✨'],msg:'별빛이 빙글빙글 돌아요!'}
 ];
+const STKS=[1,.8,1.3,.9,1.15,.75,1.05,.85];
+function stkStage(t,c){
+  const n=c.p.length,ys=[22,68,34,62,26,56,40],e=['','','',''];
+  const parts=c.p.map((x,j)=>`<span class="stk-p" style="--i:${j};--n:${n};--s:${STKS[j%STKS.length]};--x:${Math.round(10+j*(80/Math.max(1,n-1)))}%;--y:${ys[j%ys.length]}%" aria-hidden="true">${x}</span>`).join('');
+  const conf=Array.from({length:16},(_,j)=>`<i class="stk-c" style="--i:${j}"></i>`).join('');
+  return `<div class="stk-stage ${c.k} fx-${c.fx}" aria-hidden="true"><div class="stk-rays"></div>${conf}<div class="stk-w"><span class="stk-m">${t[1]}</span></div>${parts}</div>`;
+}
 function openSticker(i){
   const t=TIERS[i];if(!t||t[0]>DB.earned)return;
-  const c=STK[i],n=c.p.length,ys=[22,68,34,62,26,56];
-  const parts=c.p.map((e,j)=>`<span class="stk-p" style="--i:${j};--n:${n};--x:${Math.round(12+j*(76/Math.max(1,n-1)))}%;--y:${ys[j%ys.length]}%" aria-hidden="true">${e}</span>`).join('');
+  const c=STK[i];
   S.stk=i;
-  $('#stkBox').innerHTML=`<div class="stk-stage ${c.k} fx-${c.fx}" aria-hidden="true"><span class="stk-m">${t[1]}</span>${parts}</div>
+  $('#stkBox').innerHTML=`${stkStage(t,c)}
     <h2>${t[1]} ${t[2]}</h2><p class="pnote">${CI} ${t[0]}개 달성! ${c.msg}</p>
-    <div class="stkbtns"><button type="button" class="big alt" data-act="stkAgain">다시 보기</button><button type="button" class="big" data-act="closeStk" id="stkClose">닫기</button></div>`;
+    <div class="stkbtns"><button type="button" class="big" data-act="closeStk" id="stkClose">닫기</button></div>`;
   const w=$('#stk');w.hidden=false;play('sticker');
   const b=$('#stkClose');if(b)b.focus({preventScroll:true});
 }
@@ -2124,7 +2138,6 @@ document.addEventListener('click',e=>{
   else if(act){
     switch(act){
       case 'start':play('start');if(PROF.o.length>1&&!KIDCHOSEN)toProfiles();else DB.grade?enterApp('today'):toGrades();break;
-      case 'stkAgain':openSticker(S.stk);break;
       case 'closeStk':closeStk();break;
       case 'avPhoto':{const f=$('#avFile');if(f)f.click();break;}
       case 'avClear':if(SYNC.admin){setAvatar(PID,'');S.avMsg='';renderParent();}break;
