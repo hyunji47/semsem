@@ -684,6 +684,14 @@ html[data-th="t5"] body{background-color:#E3F8F8;background-image:radial-gradien
 .nsel .nbtn{flex:1 1 0;min-width:0;white-space:nowrap;padding-left:4px;padding-right:4px;font-size:.92rem;display:flex;align-items:center;justify-content:center;gap:2px}
 @media (max-width:360px){.nsel .nbtn{font-size:.8rem}}
 .ahead{align-items:center}.ahead .av,.ahead .mascot{margin:0}
+.ghr{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.ghl{min-width:0;flex:1}
+.ghl .pnote{overflow-wrap:anywhere}
+.ghdlg{position:fixed;inset:0;z-index:200;background:rgba(40,30,60,.45);display:grid;place-items:center;padding:16px}
+.ghbox{background:var(--card);color:var(--ink);border:3px solid var(--edge);border-radius:22px;box-shadow:0 6px 0 var(--shadow);padding:16px;width:min(100%,420px);max-height:calc(100dvh - 32px);overflow:auto}
+.ghbox h3{margin:0 0 8px;font:1.2rem/1.2 var(--font-d)}
+.ghbox label{display:block;margin:10px 0 4px}
+.ghbox .inp{width:100%}
 </style>
 
 <div class="wrap">
@@ -1461,7 +1469,7 @@ function ghHint(e){
   return '알 수 없는 오류: '+m.slice(0,60);
 }
 function ghText(){
-  if(!gh())return '이 기기에만 저장돼요. 다른 기기와 연결하려면 아래에서 GitHub를 연결하세요.';
+  if(!gh())return '연결 안 됨 · 이 기기에만 저장돼요';
   if(GH.err)return '⚠️ GitHub 저장 실패: '+GH.err+' · 이 기기에는 저장돼요.';
   if(GH.at)return 'GitHub와 연결됨 · 마지막 동기화 '+new Date(GH.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
   return 'GitHub에 연결하는 중…';
@@ -1550,28 +1558,40 @@ async function ghSync(manual){
   }catch(e){GH.err=ghHint(e);}
   GH.busy=false;
   syncBadge();
-  if(manual||document.body.dataset.screen==='parent'){const m=$('#ghMsg');if(m)m.textContent=ghText();}
+  if(manual||document.body.dataset.screen==='parent')ghMsgs();
+}
+function ghMsgs(t){document.querySelectorAll('.ghmsg').forEach(m=>{m.textContent=t!==undefined?t:ghText();});}
+function closeGh(){const d=$('#ghDlg');if(d)d.remove();}
+function ghOpen(){
+  closeGh();const g=gh();
+  const d=document.createElement('div');d.id='ghDlg';d.className='ghdlg';
+  d.innerHTML=`<div class="ghbox" role="dialog" aria-modal="true" aria-labelledby="ghT0">
+   <h3 id="ghT0">GitHub 연결</h3>
+   <p class="pnote" style="margin-top:0">기록과 설정을 GitHub 저장소(data/store.json)에 자동으로 저장해서, 다른 기기에서도 같은 내용이 열려요.</p>
+   <label class="pnote" for="ghO">GitHub 아이디</label><input id="ghO" class="inp" type="text" autocapitalize="off" autocorrect="off" placeholder="아이디" value="${esc(g?g.owner:'')}">
+   <label class="pnote" for="ghR">저장소 이름 (비공개 권장)</label><input id="ghR" class="inp" type="text" autocapitalize="off" autocorrect="off" placeholder="저장소 이름" value="${esc(g?g.repo:'')}">
+   <label class="pnote" for="ghT">토큰 (Fine-grained · 이 저장소 Contents 읽기/쓰기)</label><input id="ghT" class="inp" type="password" autocapitalize="off" autocorrect="off" autocomplete="off" placeholder="${g?'저장된 토큰 사용 중 (바꿀 때만 입력)':'github_pat_…'}" value="">
+   <p class="pnote">토큰은 이 기기 브라우저에만 저장돼요. 이 저장소 하나에만 권한을 준 토큰을 쓰세요.</p>
+   <p class="pnote ghmsg" role="status">${esc(ghText())}</p>
+   <div class="rbtns" style="justify-content:flex-start;margin-top:12px"><button type="button" class="mini-btn" data-act="ghSave">저장하고 연결</button>${g?'<button type="button" class="mini-btn" data-act="ghNow">지금 동기화</button><button type="button" class="mini-btn" data-act="ghClear">연결 해제</button>':''}<button type="button" class="mini-btn" data-act="ghClose">닫기</button></div></div>`;
+  d.addEventListener('click',e=>{if(e.target===d)closeGh();});
+  document.body.appendChild(d);
+  const f=$('#ghO');if(f)f.focus();
 }
 function ghSave(){
-  const o=($('#ghO')||{}).value||'',r=($('#ghR')||{}).value||'',t=($('#ghT')||{}).value||'';
-  const owner=o.trim(),repo=r.trim().replace(/\.git$/,''),token=t.trim();
-  if(!GHN.test(owner)||!GHN.test(repo)||!token){S.ghMsg='아이디, 저장소, 토큰을 모두 입력해 주세요.';renderParent();return;}
-  try{localStorage.setItem(GHK,JSON.stringify({owner,repo,token}));}catch(e){S.ghMsg='이 기기에 저장하지 못했어요.';renderParent();return;}
-  S.ghEdit=false;S.ghMsg='';GH.err='';GH.at=0;renderParent();ghSync(true);
+  const old=gh();
+  const owner=(($('#ghO')||{}).value||'').trim(),repo=(($('#ghR')||{}).value||'').trim().replace(/\.git$/,'');
+  const token=(($('#ghT')||{}).value||'').trim()||(old?old.token:'');
+  if(!GHN.test(owner)||!GHN.test(repo)||!token){ghMsgs('아이디, 저장소, 토큰을 모두 입력해 주세요.');return;}
+  try{localStorage.setItem(GHK,JSON.stringify({owner,repo,token}));}catch(e){ghMsgs('이 기기에 저장하지 못했어요.');return;}
+  GH.err='';GH.at=0;ghMsgs('GitHub에 연결하는 중…');renderParent();
+  ghSync(true);
 }
-function ghClear(){try{localStorage.removeItem(GHK);}catch(e){}S.ghEdit=false;S.ghMsg='';GH.err='';GH.at=0;renderParent();}
+function ghClear(){try{localStorage.removeItem(GHK);}catch(e){}GH.err='';GH.at=0;closeGh();renderParent();}
 function pGit(){
   if(SYNC.db)return '';
   const g=gh();
-  const form=`<label class="pnote" for="ghO" style="margin:0">GitHub 아이디</label><input id="ghO" class="inp" type="text" autocapitalize="off" autocorrect="off" value="${esc((g&&g.owner)||'hyunji47')}">
-   <label class="pnote" for="ghR" style="margin:10px 0 0">저장소 이름 (비공개 권장)</label><input id="ghR" class="inp" type="text" autocapitalize="off" autocorrect="off" value="${esc((g&&g.repo)||'semsem-data')}">
-   <label class="pnote" for="ghT" style="margin:10px 0 0">토큰 (Fine-grained · 이 저장소 Contents 읽기/쓰기)</label><input id="ghT" class="inp" type="password" autocapitalize="off" autocorrect="off" autocomplete="off" value="${esc((g&&g.token)||'')}" placeholder="github_pat_…">
-   <p class="pnote">토큰은 이 기기 브라우저에만 저장돼요. 이 저장소 하나에만 권한을 준 토큰을 쓰세요.</p>
-   <div class="rbtns" style="justify-content:flex-start"><button type="button" class="mini-btn" data-act="ghSave">저장하고 연결</button>${g?'<button type="button" class="mini-btn" data-act="ghClear">연결 해제</button>':''}</div>`;
-  const view=`<p class="pnote" id="ghMsg" role="status" style="margin-top:0">${esc(ghText())}</p><div class="rbtns" style="justify-content:flex-start"><button type="button" class="mini-btn" data-act="ghNow">지금 동기화</button><button type="button" class="mini-btn" data-act="ghEdit">설정 바꾸기</button></div>`;
-  return `<div class="panelbox"><h3>GitHub 연결<small>${g?'켜짐':'꺼짐'}</small></h3>
-   <p class="pnote" style="margin-top:0">기록과 설정을 GitHub 저장소(data/store.json)에 자동으로 저장해서, 다른 기기에서도 같은 내용이 열려요.</p>
-   ${(g&&!S.ghEdit)?view:form}${S.ghMsg?`<p class="pnote" role="status">${esc(S.ghMsg)}</p>`:''}</div>`;
+  return `<div class="panelbox ghrow"><div class="ghr"><div class="ghl"><h3 style="margin:0">GitHub 연결<small>${g?'켜짐':'꺼짐'}</small></h3><p class="pnote ghmsg" style="margin:2px 0 0">${esc(ghText())}</p></div><button type="button" class="mini-btn" data-act="ghOpen">설정</button></div></div>`;
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)ghSync(false);});
 
@@ -2345,8 +2365,9 @@ document.addEventListener('click',e=>{
       case 'closeStk':closeStk();break;
       case 'ghSave':ghSave();break;
       case 'ghClear':ghClear();break;
-      case 'ghEdit':S.ghEdit=true;S.ghMsg='';renderParent();break;
-      case 'ghNow':{const m=$('#ghMsg');if(m)m.textContent='동기화 중…';ghSync(true);break;}
+      case 'ghOpen':ghOpen();break;
+      case 'ghClose':closeGh();break;
+      case 'ghNow':ghMsgs('동기화 중…');ghSync(true);break;
       case 'avPhoto':{const f=$('#avFile');if(f)f.click();break;}
       case 'avClear':if(SYNC.admin){setAvatar(PID,'');S.avMsg='';renderParent();}break;
       case 'toProfiles':closeSheet();play('tap');toProfiles();break;
@@ -2435,6 +2456,7 @@ document.addEventListener('change',e=>{
   else if(id==='pPace'){CFG.pace=e.target.value;cfgChanged();}
 });
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&$('#ghDlg')){closeGh();return;}
   if(e.key==='Escape'&&$('#stk')&&!$('#stk').hidden){closeStk();return;}
   if(e.key==='Escape'&&!$('#sheet').hidden){closeSheet();return;}
   if(e.key==='Enter'&&e.target&&e.target.id==='pGateIn'){e.preventDefault();const b=document.querySelector('[data-act="pGate"]');if(b)b.click();return;}
