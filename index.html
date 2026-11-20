@@ -692,6 +692,20 @@ html[data-th="t5"] body{background-color:#E3F8F8;background-image:radial-gradien
 .ghbox h3{margin:0 0 8px;font:1.2rem/1.2 var(--font-d)}
 .ghbox label{display:block;margin:10px 0 4px}
 .ghbox .inp{width:100%}
+.goals{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:10px}
+.goal{border:3px solid var(--edge);border-radius:16px;background:var(--card);padding:10px 12px;box-shadow:0 3px 0 var(--shadow)}
+.goal.ok{background:var(--mint-t)}
+.gtop{display:flex;justify-content:space-between;align-items:center;gap:8px;font:1.05rem/1.2 var(--font-d)}
+.gtop b{min-width:0;overflow-wrap:anywhere}
+.gcn{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:.95rem}
+.goal .pbar{margin-top:8px!important;height:16px}
+.goal.ok .pbar i{background:var(--mint)}
+.gbtns{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.gbtns .goalbtn{margin:0;flex:1;width:auto}
+.gneed{display:inline-flex;align-items:center;gap:2px;font:.95rem/1.2 var(--font-d);color:var(--soft)}
+.gdel{flex:none;border:2px solid var(--edge);border-radius:999px;background:var(--card);color:var(--soft);font:.85rem/1 var(--font-d);padding:8px 12px;min-height:36px}
+.goaladd{border-top:2px dashed var(--edge);padding-top:12px;margin-top:4px}
+.goaladd .goalbtn{margin-top:12px;width:100%}
 </style>
 
 <div class="wrap">
@@ -1259,7 +1273,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 /* ===== 저장: 이 기기(localStorage) + 공유 DB(다른 기기와 동기화) · 프로필별로 따로 저장 ===== */
 const DBK='semsem-v2',CFGK='semsem-cfg-v1',PREFK='semsem-pref-v1',PROFK='semsem-profiles-v1',ACTK='semsem-active-v1';
 const lk=(base,pid)=>pid==='main'?base:base+':'+pid;
-const defaultDB=()=>({grade:0,start:'',earned:0,spent:0,hw:{},stars:{},ustat:{},goal:{name:'',cost:100},redeemed:[],prog:null,pracDay:{d:'',c:0},prac:[],t:0});
+const defaultDB=()=>({grade:0,start:'',earned:0,spent:0,hw:{},stars:{},ustat:{},goals:[],redeemed:[],prog:null,pracDay:{d:'',c:0},prac:[],t:0});
 const DB=defaultDB(),CFG=defaultCfg(),PREF={sfx:true,bgm:true};
 const PROF={list:{main:{n:''}},o:['main'],t:0};
 let PID='main',KIDP='main',KIDCHOSEN=false;
@@ -1269,7 +1283,13 @@ const AVE=['🐻','🐰','🦊','🐼','🐯','🐸','🐶','🐱','🦁','🐵'
 const AVBG=['#FFD9A8','#FFD6E0','#FFE0B3','#E4E4EA','#FFE9A8','#C9F2C7','#F5DDB5','#FFE2C2','#FFE29A','#E6CDB8','#E6D5FF','#CFE8FF'];
 function readJSON(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}
 function applyCfg(c){const d=defaultCfg();Object.keys(CFG).forEach(k=>delete CFG[k]);Object.assign(CFG,d,c);CFG.counts=Object.assign({},d.counts,(c&&c.counts)||{});CFG.units=Object.assign({},(c&&c.units)||{});}
-function adoptProgress(d){Object.keys(DB).forEach(k=>delete DB[k]);Object.assign(DB,defaultDB(),d);delete DB.sfx;delete DB.bgm;}
+function normGoals(){
+  let a=Array.isArray(DB.goals)?DB.goals:null;
+  if(!a){a=[];const g=DB.goal;if(g&&g.name&&String(g.name).trim())a.push({id:'g0',n:String(g.name).trim(),c:+g.cost||100});}
+  DB.goals=a.filter(x=>x&&x.n&&+x.c>0).slice(0,8).map((x,i)=>({id:String(x.id||'g'+i+Math.random().toString(36).slice(2,6)),n:String(x.n).slice(0,24),c:Math.round(+x.c)}));
+  delete DB.goal;
+}
+function adoptProgress(d){Object.keys(DB).forEach(k=>delete DB[k]);Object.assign(DB,defaultDB(),d);delete DB.sfx;delete DB.bgm;if(!d||!Array.isArray(d.goals))delete DB.goals;normGoals();}
 function readLocal(pid){
   const o=readJSON(lk(DBK,pid));
   adoptProgress(o&&typeof o==='object'?o:{});
@@ -1823,7 +1843,7 @@ function renderApp(){
   v.innerHTML=({today:viewToday,practice:viewPractice,cal:viewCal,reward:viewReward})[S.tab]();
 }
 function setTab(t,quiet){
-  S.tab=t;S.arm=false;
+  S.tab=t;S.arm='';S.armDel='';
   if(t==='cal'){const d=new Date();S.calY=d.getFullYear();S.calM=d.getMonth();S.sel=todayKey();}
   renderApp();
   if(!quiet){play('tap');window.scrollTo(0,0);}
@@ -1937,12 +1957,16 @@ function viewReward(){
   const bal=balance(),E=DB.earned,nx=TIERS.find(t=>t[0]>E),pv=[...TIERS].reverse().find(t=>t[0]<=E),lo=pv?pv[0]:0;
   const pct=nx?Math.round((E-lo)/(nx[0]-lo)*100):100;
   const tiers=TIERS.map((t,i)=>{const ok=t[0]<=E;return `<${ok?'button type="button" data-stk="'+i+'" aria-label="'+t[2]+' 스티커 보기"':'div'} class="tier${ok?' on':' lock'}"><span class="em" aria-hidden="true">${t[1]}</span><b>${ok?t[2]:'???'}</b><small>${CI}${t[0]}${ok?' 달성':''}</small></${ok?'button':'div'}>`;}).join('');
-  const g=DB.goal,has=g.name&&g.name.trim();
-  const pg=has?Math.min(100,Math.round(bal/g.cost*100)):0,can=has&&bal>=g.cost;
+  const gs=DB.goals||[],gc=S.gc||100;
+  const rows=gs.map(g=>{const cur=Math.min(bal,g.c),pg=Math.round(cur/g.c*100),can=bal>=g.c;
+    return `<li class="goal${can?' ok':''}"><div class="gtop"><b>${esc(g.n)}</b><span class="gcn">${CI}${cur} / ${g.c}</span></div>
+      <div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${g.c}" aria-valuenow="${cur}" aria-label="${esc(g.n)} 모은 코인"><i style="width:${pg}%"></i></div>
+      <div class="gbtns">${can?`<button type="button" class="big goalbtn" data-act="redeem" data-gid="${g.id}">${S.arm===g.id?'정말 교환할까요? 한 번 더 누르세요':'교환하기'}</button>`:`<span class="gneed">${CI}${g.c-bal}개 더 모아요</span>`}<button type="button" class="gdel" data-act="goalDel" data-gid="${g.id}" aria-label="${esc(g.n)} 목표 삭제">${S.armDel===g.id?'정말 삭제?':'삭제'}</button></div></li>`;}).join('');
   const hist=(DB.redeemed||[]).slice(0,5).map(r=>`<li>${dateLabel(r.d)} · ${esc(r.n)} (−${CI}${r.c})</li>`).join('');
-  const goal=`<h3>나의 보상 목표</h3><input id="goalName" class="inp" type="text" maxlength="24" value="${esc(g.name)}" placeholder="받고 싶은 보상 (예: 아이스크림)" aria-label="보상 이름">
-    <label class="goalcost"><span class="gl">필요한 ${CI}</span><select id="goalCost" class="inp">${[50,100,150,200,300,500].map(c=>`<option value="${c}"${c===g.cost?' selected':''}>${c}</option>`).join('')}</select></label>
-    ${has?`<div class="pbar"><i style="width:${pg}%"></i></div>${can?`<button type="button" class="big goalbtn" data-act="redeem">${S.arm?'정말 교환할까요? 한 번 더 누르세요':'교환하기'}</button>`:`<button type="button" class="big goalbtn" disabled>${CI}${g.cost-bal} 더 모아요</button>`}`:'<p class="pnote">보상 이름을 적으면 목표가 생겨요.</p>'}`;
+  const add=gs.length<8?`<div class="goaladd"><input id="goalName" class="inp" type="text" maxlength="24" value="${esc(S.gn||'')}" placeholder="받고 싶은 보상 (예: 아이스크림)" aria-label="보상 이름">
+    <label class="goalcost"><span class="gl">필요한 ${CI}</span><select id="goalCost" class="inp">${[50,100,150,200,300,500].map(c=>`<option value="${c}"${c===gc?' selected':''}>${c}</option>`).join('')}</select></label>
+    <button type="button" class="big alt goalbtn" data-act="goalAdd">목표 추가</button></div>`:'<p class="pnote">목표는 8개까지 등록할 수 있어요.</p>';
+  const goal=`<h3>나의 보상 목표<small>${gs.length}개</small></h3>${gs.length?`<ul class="goals">${rows}</ul>`:'<p class="pnote" style="margin-top:0">받고 싶은 보상을 적고 목표를 추가해 보세요. 여러 개 등록할 수 있어요.</p>'}${add}`;
   return `<div class="panelbox"><div class="coin2"><div class="c2 now"><small>쓸 수 있는 코인</small><b>${COINIC}<span>${bal}</span></b></div><div class="c2 all"><small>지금까지 모은 코인</small><b>${COINIC}<span>${E}</span></b></div></div>
     <div style="margin-top:12px" class="pbar"><i style="width:${pct}%"></i></div><p class="pnote">${nx?`다음 스티커 ${nx[1]} ${nx[2]}까지 ${CI} ${nx[0]-E}개`:'스티커를 모두 모았어요!'}</p></div>
   <div class="panelbox"><h3>스티커 모음<small>${stickerCount()} / ${TIERS.length}</small></h3><p class="pnote" style="margin:0 0 10px">달성한 스티커를 눌러 보세요!</p><div class="tiers">${tiers}</div></div>
@@ -2231,13 +2255,13 @@ function pStat(){
   /* 코인·연습 현황 */
   const E=DB.earned,hwC=Object.values(DB.hw).reduce((s,r)=>s+(r.c||0)+(r.b||0),0),prC=Math.max(0,E-hwC),pr=DB.prac||[];
   const sd=k=>{const d=fromKey(k);return `${d.getMonth()+1}/${d.getDate()}`;};
-  const nxT=TIERS.find(t=>t[0]>E),goal=DB.goal&&DB.goal.name&&DB.goal.name.trim()?DB.goal:null;
+  const nxT=TIERS.find(t=>t[0]>E),goals=DB.goals||[];
   const coinBox=`<div class="panelbox"><h3>코인 현황<small>모은 ${CI} ${E}개</small></h3><ul class="plist rec">
     <li><span>쓸 수 있는 코인</span><b>${CI} ${balance()}개</b></li>
     <li><span>숙제로 번 코인</span><b>${CI} ${hwC}개</b></li>
     <li><span>연습으로 번 코인</span><b>${CI} ${prC}개</b></li>
     <li><span>쓴 코인</span><b>${CI} ${DB.spent}개</b></li></ul>
-    <p class="pnote">스티커 ${stickerCount()} / ${TIERS.length}개${nxT?` · 다음 스티커 ${nxT[1]} ${nxT[2]}까지 ${CI} ${nxT[0]-E}개`:' · 모두 모았어요!'}${goal?`<br>보상 목표: <b>${esc(goal.name)}</b> (${CI} ${Math.min(balance(),goal.cost)} / ${goal.cost}개)`:''}</p></div>`;
+    <p class="pnote">스티커 ${stickerCount()} / ${TIERS.length}개${nxT?` · 다음 스티커 ${nxT[1]} ${nxT[2]}까지 ${CI} ${nxT[0]-E}개`:' · 모두 모았어요!'}${goals.length?`<br>보상 목표: ${goals.map(g=>`<b>${esc(g.n)}</b> (${CI} ${Math.min(balance(),g.c)} / ${g.c}개)`).join(' · ')}`:''}</p></div>`;
   const wk0=addDays(key,-6),pn7=pr.filter(x=>x.d>=wk0).length,pnT=pr.filter(x=>x.d===key).length;
   const cnt={};pr.forEach(x=>{cnt[x.u]=(cnt[x.u]||0)+1;});
   const topU=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([u,c])=>{const un=unitById(u);return `<li><span>${esc(un?un.name:u)}</span><b>${c}번</b></li>`;}).join('');
@@ -2427,20 +2451,34 @@ document.addEventListener('click',e=>{
       }
       case 'pinOff':CFG.pin='';cfgChanged();break;
       case 'redeem':{
-        if(!S.arm){S.arm=true;play('tap');renderApp();setTimeout(()=>{if(S.arm){S.arm=false;if(!$('#app').hidden&&S.tab==='reward')renderApp();}},3500);break;}
-        S.arm=false;
-        if(DB.goal.name.trim()&&balance()>=DB.goal.cost){
-          DB.spent+=DB.goal.cost;DB.redeemed.unshift({n:DB.goal.name.trim(),d:todayKey(),c:DB.goal.cost});DB.redeemed=DB.redeemed.slice(0,20);
+        const gid=t.dataset.gid,g=(DB.goals||[]).find(x=>x.id===gid);if(!g)break;
+        if(S.arm!==gid){S.arm=gid;S.armDel='';play('tap');renderApp();setTimeout(()=>{if(S.arm===gid){S.arm='';if(!$('#app').hidden&&S.tab==='reward')renderApp();}},3500);break;}
+        S.arm='';
+        if(balance()>=g.c){
+          DB.spent+=g.c;DB.redeemed.unshift({n:g.n,d:todayKey(),c:g.c});DB.redeemed=DB.redeemed.slice(0,20);
+          DB.goals=DB.goals.filter(x=>x.id!==gid);
           save();play('sticker');
         }
         renderApp();break;
+      }
+      case 'goalAdd':{
+        const nm=(S.gn||'').trim().slice(0,24);
+        if(!nm){const i=$('#goalName');if(i){i.placeholder='보상 이름을 먼저 적어 주세요';i.focus();}break;}
+        if((DB.goals||[]).length>=8)break;
+        DB.goals.push({id:'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,4),n:nm,c:+S.gc||100});
+        S.gn='';save();play('tap');renderApp();break;
+      }
+      case 'goalDel':{
+        const gid=t.dataset.gid;
+        if(S.armDel!==gid){S.armDel=gid;S.arm='';renderApp();setTimeout(()=>{if(S.armDel===gid){S.armDel='';if(!$('#app').hidden&&S.tab==='reward')renderApp();}},3500);break;}
+        S.armDel='';DB.goals=DB.goals.filter(x=>x.id!==gid);save();renderApp();break;
       }
     }
   }
 });
 function alertInline(msg){const b=document.querySelector('#pPinIn');if(b){b.placeholder=msg;b.value='';b.focus();}}
 document.addEventListener('input',e=>{
-  if(e.target.id==='goalName'){DB.goal.name=e.target.value.slice(0,24);S.arm=false;save();}
+  if(e.target.id==='goalName'){S.gn=e.target.value.slice(0,24);}
 });
 document.addEventListener('change',e=>{
   const id=e.target.id;
@@ -2451,7 +2489,7 @@ document.addEventListener('change',e=>{
     photoToDataURL(f).then(url=>{setAvatar(PID,'p',url);S.avMsg='';renderParent();}).catch(()=>{S.avMsg='이 사진은 쓸 수 없어요. 다른 사진을 골라 주세요.';renderParent();});
     return;
   }
-  if(id==='goalCost'){DB.goal.cost=+e.target.value;S.arm=false;save();renderApp();}
+  if(id==='goalCost'){S.gc=+e.target.value;}
   else if(id==='pName'&&SYNC.admin){const v=e.target.value.trim().slice(0,10);PROF.list[PID]=Object.assign({},PROF.list[PID],{n:v});saveProf();renderParent();}
   else if(id==='pPace'){CFG.pace=e.target.value;cfgChanged();}
 });
