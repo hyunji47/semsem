@@ -713,6 +713,10 @@ html[data-th="t5"] body{background-color:#E3F8F8;background-image:radial-gradien
 .goal .pbar i{border-radius:99px}
 .gdel{border:0;background:transparent;color:var(--soft);text-decoration:underline;text-underline-offset:3px;padding:8px 6px}
 .goaladd{border-top:0;padding-top:4px}
+/* 최근 14일 날짜 라벨: 겹치지 않게 두 줄(월/일) */
+.b14{grid-template-rows:14px minmax(0,1fr) 32px}
+.b14 span{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;line-height:14px;font-size:.68rem;margin-top:3px;white-space:nowrap}
+.b14 span small{font-size:.6rem;line-height:14px;height:14px;color:var(--soft);opacity:.8;overflow:visible;white-space:nowrap}
 </style>
 
 <div class="wrap">
@@ -2242,7 +2246,7 @@ function pStat(){
   const tiles=`<div class="ptiles"><div class="stat"><small>오늘</small><b class="sm">${todayTxt}</b></div><div class="stat"><small>연속 숙제</small><b>${streakNow()}일</b></div><div class="stat"><small>최근 7일 완료 (쉬는 날 제외)</small><b>${wkDone}/${req7}</b></div><div class="stat"><small>최근 7일 한 번에 맞힘</small><b>${rate7==null?'-':rate7+'%'}</b></div></div>`;
   const chart=`<div class="panelbox"><h3>최근 14일<small>막대 = 한 번에 맞힌 비율</small></h3><div class="bars14">${days.map(k=>{
     const r=DB.hw[k],st=dayStatus(k),p=r?Math.round(r.f/Math.max(1,r.t)*100):0,d=fromKey(k);
-    return `<div class="b14 ${st}" title="${dateLabel(k)}${r?` · ${p}%`:''}"><em>${r?p:''}</em><i style="height:${r?Math.max(6,p):0}%"></i><span>${d.getMonth()+1}/${d.getDate()}</span></div>`;}).join('')}</div>
+    return `<div class="b14 ${st}" title="${dateLabel(k)}${r?` · ${p}%`:''}"><em>${r?p:''}</em><i style="height:${r?Math.max(6,p):0}%"></i><span><small>${(k===days[0]||d.getDate()===1)?(d.getMonth()+1)+'월':''}</small>${d.getDate()}</span></div>`;}).join('')}</div>
     <p class="pnote">${done14.length?`최근 14일 중 ${done14.length}일 숙제를 했어요.`:'아직 완료한 숙제가 없어요.'}</p></div>`;
   const catRows=['calc','logic','other'].map(c=>{
     let f=0,n=0;UNITS.filter(u=>u.g===g&&catOf(u)===c).forEach(u=>{const s=ustat(u.id);f+=s.f;n+=s.n;});
