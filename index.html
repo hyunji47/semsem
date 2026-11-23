@@ -717,6 +717,7 @@ html[data-th="t5"] body{background-color:#E3F8F8;background-image:radial-gradien
 .b14{grid-template-rows:14px minmax(0,1fr) 32px}
 .b14 span{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;line-height:14px;font-size:.68rem;margin-top:3px;white-space:nowrap}
 .b14 span small{font-size:.6rem;line-height:14px;height:14px;color:var(--soft);opacity:.8;overflow:visible;white-space:nowrap}
+.gK{--gc:var(--coral);--gt:var(--coral-t)}
 </style>
 
 <div class="wrap">
@@ -728,7 +729,7 @@ html[data-th="t5"] body{background-color:#E3F8F8;background-image:radial-gradien
     </div>
     <div id="introMascot"></div>
     <h1>셈셈<br>수학 놀이터</h1>
-    <p class="isub">초등 1~3학년 연산 · 사고력 · 도형 · 확률<br>매일 50문제 숙제로 <span class="coinic ci" role="img" aria-label="코인"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.2 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg></span>을 모아요</p>
+    <p class="isub">예비 초1~초3 연산 · 사고력 · 도형 · 확률<br>매일 50문제 숙제로 <span class="coinic ci" role="img" aria-label="코인"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.2 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg></span>을 모아요</p>
     <button type="button" class="big" id="startBtn" data-act="start">시작하기</button>
     <button type="button" class="linkbtn" id="introChange" data-act="changeGrade" hidden>학년 바꾸기</button>
   </section>
@@ -1143,7 +1144,60 @@ const MATHX=[
  }}
 ];
 UNITS.push(...LOGIC,...MATHX);
-const GRADE_DESC={1:'10과 20 안에서 수와 셈을 시작해요.',2:'두 자리 수 계산과 곱셈구구를 익혀요.',3:'세 자리 수, 곱셈, 나눗셈, 분수에 도전해요.'};
+
+/* ===== 예비 초1 (grade 'K') ===== */
+const KU=[
+ {id:'k-count',g:'K',grp:'수 알아보기',name:'수 세기 (9까지)',badge:'123',ex:'● ● ● → 3',q:'모두 몇 개인지 세어 보세요.',gen:()=>{
+   const n=R(1,9),e=pick(EMO);
+   return H('모두 {S}개',n,{hint:'하나씩 손가락으로 짚으며 세어 봐요.',visual:`<div class="objs">${Array.from({length:n},()=>`<span>${e}</span>`).join('')}</div>`,key:'kc'+n+e});}},
+ {id:'k-order',g:'K',grp:'수 알아보기',name:'수의 순서',badge:'→',ex:'5 다음 수는?',q:'수를 차례대로 세어 봐요.',gen:()=>{
+   if(Math.random()<.5){const a=R(1,19);return H(`${a} 바로 다음 수는 {S}`,a+1,{hint:`${a}, ${a+1} 하고 이어서 세요.`});}
+   const a=R(2,20);return H(`${a} 바로 앞의 수는 {S}`,a-1,{hint:`거꾸로 세요. ${a}, ${a-1}`});}},
+ {id:'k-compare',g:'K',grp:'수 알아보기',name:'수의 크기 비교 (20까지)',badge:'>',ex:'7 ○ 12',q:'알맞은 기호를 골라요.',gen:()=>{
+   const a=R(1,20),b=Math.random()<.7?Math.min(20,Math.max(1,a+R(-4,4))):R(1,20);
+   const ans=a>b?'>':a<b?'<':'=';
+   return C(a,b,ans,`${a} ${ans} ${b}`,'더 뒤에 있는 수가 더 커요. 같으면 =예요.');}},
+ {id:'k-split',g:'K',grp:'덧셈과 뺄셈 기초',name:'모으기와 가르기',badge:'□',ex:'5는 2와 □',q:'빈칸에 알맞은 수를 써요.',gen:()=>{
+   const n=R(3,9),a=R(1,n-1);
+   return H(`${a} + {S} = ${n}`,n-a,{hint:`${a}에서 ${n}까지 몇 번 더 세면 될까요?`});}},
+ {id:'k-add',g:'K',grp:'덧셈과 뺄셈 기초',name:'덧셈 (합이 9 이하)',badge:'+',ex:'3 + 4',q:'계산해 보세요.',gen:()=>{
+   const a=R(1,8),b=R(1,9-a);
+   return H(`${a} + ${b} = {S}`,a+b,{hint:`${a}에서 ${b}만큼 이어서 세어요.`});}},
+ {id:'k-sub',g:'K',grp:'덧셈과 뺄셈 기초',name:'뺄셈 (9 이하)',badge:'−',ex:'8 − 3',q:'계산해 보세요.',gen:()=>{
+   const a=R(2,9),b=R(1,a-1);
+   return H(`${a} − ${b} = {S}`,a-b,{hint:`${a}에서 ${b}만큼 거꾸로 세어요.`});}},
+ {id:'k-ten',g:'K',grp:'십몇 알아보기',name:'10과 몇 (십몇)',badge:'10+',ex:'10 + 4 = 14',q:'10개씩 묶음과 낱개로 나눠 봐요.',gen:()=>{
+   const a=R(1,9);
+   if(Math.random()<.5)return H(`10 + ${a} = {S}`,10+a,{hint:`10 다음에 ${a}만큼 더 세면 ${10+a}예요.`});
+   return H(`${10+a}는 10과 {S}`,a,{hint:`${10+a}에서 10을 빼고 남은 낱개를 세어요.`});}},
+ {id:'k-pattern',g:'K',grp:LG,name:'규칙 찾기',badge:'?',ex:'🍎 ⭐ 🍎 ⭐ ?',q:'규칙을 찾아 ?에 들어갈 것을 골라요.',gen:()=>{
+   if(Math.random()<.35){const st=R(1,5),seq=Array.from({length:5},(_,i)=>st+i),bi=R(1,4),ans=seq[bi];
+     return M('수가 1씩 커져요. ?에 들어갈 수를 골라요.',ans,near(ans,0),{visual:seqHTML(seq,bi),hint:'이웃한 수가 1씩 커져요.',sum:`${seqSum(seq,bi)} → ${ans}`});}
+   const P=pick(['AB','AB','AAB','ABC']),em=shuffle(EMO),map={A:em[0],B:em[1],C:em[2]},L=P.length;
+   const seq=Array.from({length:7},(_,i)=>map[P[i%L]]),bi=R(2*L-1,6),ans=seq[bi];
+   return M('규칙을 찾아 ?에 들어갈 모양을 골라요.',ans,em.filter(e=>e!==ans),{visual:seqHTML(seq,bi),hint:`같은 모양이 ${L}개씩 되풀이돼요.`,sum:`${seq.map((v,i)=>i===bi?'□':v).join(' ')} → ${ans}`});}},
+ {id:'k-word',g:'K',grp:LG,name:'이야기 수학',badge:'?',ex:'사과 4개 + 3개',q:'이야기를 읽고 답을 골라요.',gen:()=>{
+   const nm=pick(NM),it=pick(IT);
+   if(Math.random()<.5){const a=R(2,7),b=R(1,9-a);return M(`${nm}는 ${it}를 ${a}개 가지고 있었어요. ${b}개를 더 받았어요. 모두 몇 개일까요?`,a+b,near(a+b,1),{hint:'더 받았으니 두 수를 더해요.',sum:`${it} ${a}개 + ${b}개 → ${a+b}`});}
+   const a=R(3,9),b=R(1,a-1);return M(`${nm}는 ${it}를 ${a}개 가지고 있었어요. 그중 ${b}개를 먹었어요. 남은 ${it}는 몇 개일까요?`,a-b,near(a-b,1),{hint:'먹은 만큼 빼요.',sum:`${it} ${a}개 − ${b}개 → ${a-b}`});}},
+ {id:'k-biggest',g:'K',grp:LG,name:'가장 큰 수 · 작은 수',badge:'?',ex:'가장 큰 수는?',q:'수를 비교해서 골라요.',gen:()=>{
+   const set=new Set();while(set.size<4)set.add(R(1,20));
+   const arr=[...set],big=Math.random()<.5,ans=big?Math.max(...arr):Math.min(...arr);
+   return M(`다음 수 중 가장 ${big?'큰':'작은'} 수는 어느 것일까요?`,ans,arr.filter(x=>x!==ans),{mix:true,hint:'수를 차례로 세면 뒤에 있는 수가 더 커요.',sum:`${arr.join(', ')} 중 가장 ${big?'큰':'작은'} 수 → ${ans}`});}},
+ {id:'k-shape',g:'K',grp:GEO,name:'모양 이름 맞히기',badge:'△',ex:'삼각형 · 사각형 · 원',q:'모양의 이름을 골라요.',gen:()=>{
+   const names=['삼각형','사각형','원'],i=R(0,2),ans=names[i];let inner,hint;
+   if(i===0){const t=pick([[[60,12],[12,104],[108,104]],[[20,100],[100,100],[72,14]]]);inner=`<polygon points="${t.map(q=>q.join(',')).join(' ')}"/>`;hint='뾰족한 곳이 3개예요.';}
+   else if(i===1){const w=R(60,100),h=Math.random()<.4?w:R(40,w-10);inner=`<rect x="${60-w/2}" y="${60-h/2}" width="${w}" height="${h}"/>`;hint='뾰족한 곳이 4개예요.';}
+   else{inner='<circle cx="60" cy="60" r="48"/>';hint='둥글고 뾰족한 곳이 없어요.';}
+   return M('이 모양의 이름은 무엇일까요?',ans,names.filter(x=>x!==ans),{visual:svgWrap(inner),hint,key:rnd(),sum:`${ans} 모양 → ${ans}`});}},
+ {id:'k-shape-count',g:'K',grp:GEO,name:'모양 세기',badge:'□',ex:'삼각형은 몇 개?',q:'같은 모양을 세어 보세요.',gen:()=>{
+   const kinds=['원','삼각형','사각형'],target=pick(kinds);
+   const items=find(()=>Array.from({length:R(6,9)},()=>pick(kinds)),a=>{const c=a.filter(x=>x===target).length;return c>=1&&c<=5;});
+   const ans=items.filter(x=>x===target).length;
+   return M(`${target}은 모두 몇 개일까요?`,ans,near(ans,1),{visual:`<div class="shapes">${items.map(miniSVG).join('')}</div>`,hint:'하나씩 짚어 가며 세면 틀리지 않아요.',key:rnd(),sum:`${target} 세기 → ${ans}`});}}
+];
+UNITS.push(...KU);
+const GRADE_DESC={K:'1부터 20까지의 수와 10 안의 덧셈·뺄셈을 미리 익혀요.',1:'10과 20 안에서 수와 셈을 시작해요.',2:'두 자리 수 계산과 곱셈구구를 익혀요.',3:'세 자리 수, 곱셈, 나눗셈, 분수에 도전해요.'};
 /* ---- 난이도 · 학교 진도 · 일일 숙제 생성 ---- */
 function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -1178,6 +1232,14 @@ function autoLevel(hw){
 
 /* 학교 진도(2022 개정 교과서의 단원 순서를 바탕으로 한 대략적인 월별 진도) */
 const PACE={
+ K:[
+  {m:[3,4],t:'수 세기 · 수의 순서 (9까지)',calc:['k-count','k-order'],logic:['k-pattern'],other:['k-shape']},
+  {m:[5,6],t:'수의 크기 비교 · 여러 가지 모양',calc:['k-order','k-compare','k-count'],logic:['k-biggest','k-pattern'],other:['k-shape','k-shape-count']},
+  {m:[7,8],t:'모으기와 가르기',calc:['k-split','k-compare','k-count'],logic:['k-pattern','k-biggest'],other:['k-shape-count']},
+  {m:[9,10],t:'덧셈 (합이 9 이하)',calc:['k-add','k-split','k-order'],logic:['k-word','k-pattern'],other:['k-shape','k-shape-count']},
+  {m:[11],t:'뺄셈 (9 이하)',calc:['k-sub','k-add','k-split'],logic:['k-word','k-biggest'],other:['k-shape-count']},
+  {m:[12,1,2],t:'십몇 알아보기 · 총정리',calc:['k-ten','k-add','k-sub','k-compare','k-split'],logic:['k-word','k-pattern','k-biggest'],other:['k-shape','k-shape-count']}
+ ],
  1:[
   {m:[3],t:'1학기 · 9까지의 수 · 여러 가지 모양',calc:['g1-count','g1-compare'],logic:['g1-biggest','g1-pattern'],other:['g1-shape','g1-shape-count']},
   {m:[4],t:'1학기 · 덧셈과 뺄셈',calc:['g1-make10','g1-add10','g1-sub10'],logic:['g1-word','g1-pattern'],other:['g1-algebra','g1-share']},
@@ -1284,6 +1346,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 /* ===== 저장: 이 기기(localStorage) + 공유 DB(다른 기기와 동기화) · 프로필별로 따로 저장 ===== */
 const DBK='semsem-v2',CFGK='semsem-cfg-v1',PREFK='semsem-pref-v1',PROFK='semsem-profiles-v1',ACTK='semsem-active-v1';
 const lk=(base,pid)=>pid==='main'?base:base+':'+pid;
+const gname=g=>g==='K'?'예비 초1':g+'학년';
 const defaultDB=()=>({grade:0,start:'',earned:0,spent:0,hw:{},stars:{},ustat:{},goals:[],redeemed:[],prog:null,pracDay:{d:'',c:0},prac:[],t:0});
 const DB=defaultDB(),CFG=defaultCfg(),PREF={sfx:true,bgm:true};
 const PROF={list:{main:{n:''}},o:['main'],t:0};
@@ -1825,13 +1888,13 @@ function renderProfiles(){
 }
 function renderIntro(){
   $('#introMascot').innerHTML=mascot();
-  $('#startBtn').textContent=DB.grade?`이어서 하기 · ${DB.grade}학년`:'시작하기';
+  $('#startBtn').textContent=DB.grade?`이어서 하기 · ${gname(DB.grade)}`:'시작하기';
   $('#introChange').hidden=!DB.grade;
 }
 function renderGrades(){
-  $('#gcards').innerHTML=[1,2,3].map(g=>`<button type="button" class="gcard g${g}" data-g="${g}"><span class="gnum">${g}</span><span><b>${g}학년${DB.grade===g?'<span class="now">지금 학년</span>':''}</b><small>${GRADE_CARD[g]}</small></span></button>`).join('');
+  $('#gcards').innerHTML=['K',1,2,3].map(g=>`<button type="button" class="gcard g${g}" data-g="${g}"><span class="gnum">${g==='K'?'예':g}</span><span><b>${gname(g)}${DB.grade===g?'<span class="now">지금 학년</span>':''}</b><small>${GRADE_CARD[g]}</small></span></button>`).join('');
 }
-const GRADE_CARD={1:'수 세기 · 10 안의 덧셈 · 뺄셈 · 규칙 찾기',2:'두 자리 수 계산 · 곱셈구구 · 도형 · 규칙과 식',3:'세 자리 수 · 곱셈 · 나눗셈 · 분수 · 평균 · 확률'};
+const GRADE_CARD={K:'수 세기 · 수의 순서 · 9까지 덧셈 · 뺄셈 · 모양',1:'수 세기 · 10 안의 덧셈 · 뺄셈 · 규칙 찾기',2:'두 자리 수 계산 · 곱셈구구 · 도형 · 규칙과 식',3:'세 자리 수 · 곱셈 · 나눗셈 · 분수 · 평균 · 확률'};
 function toIntro(){renderIntro();show('intro');}
 function toProfiles(){renderProfiles();show('profSel');}
 /* 부모 화면에서 보던 프로필의 아이 화면으로 이동 (이 기기의 아이 프로필도 그 프로필로 바뀜) */
@@ -1844,7 +1907,7 @@ const FIREIC='<span class="coinic fire"><svg viewBox="0 0 24 24" aria-hidden="tr
 const COINIC=`<span class="coinic">${CISVG}</span>`,CI=`<span class="coinic ci" role="img" aria-label="코인">${CISVG}</span>`;
 /* ===== 메인(탭) ===== */
 function renderHead(){
-  $('#appHead').innerHTML=`${avHTML(PID,'head')}<div class="ht"><b>${kidName()?esc(kidName())+'의 ':''}수학 놀이터</b><small>${DB.grade}학년</small></div><div class="coinchip" aria-label="코인 ${balance()}개">${COINIC}${balance()}</div><button type="button" class="gear" data-act="sheet" aria-label="설정">${ICON.gear}</button>`;
+  $('#appHead').innerHTML=`${avHTML(PID,'head')}<div class="ht"><b>${kidName()?esc(kidName())+'의 ':''}수학 놀이터</b><small>${gname(DB.grade)}</small></div><div class="coinchip" aria-label="코인 ${balance()}개">${COINIC}${balance()}</div><button type="button" class="gear" data-act="sheet" aria-label="설정">${ICON.gear}</button>`;
 }
 function renderApp(){
   renderHead();
@@ -1905,7 +1968,7 @@ function viewPractice(){
 }
 function dayDetail(k){
   const st=dayStatus(k),r=DB.hw[k];let body;
-  if(r)body=`<p><b>${r.g}학년 숙제 완료!</b></p><ul><li>한 번에 맞힌 문제 ${r.f} / ${r.t}</li><li>다시 풀어 맞힌 문제 ${r.s||0}</li><li>별 <span class="mstars">${'★'.repeat(r.st||0)}${'☆'.repeat(3-(r.st||0))}</span></li><li>${CI} +${r.c+r.b}${r.b?` (연속 보너스 +${r.b} 포함)`:''}</li>${r.sec?`<li>걸린 시간 약 ${Math.max(1,Math.round(r.sec/60))}분</li>`:''}</ul>`;
+  if(r)body=`<p><b>${gname(r.g)} 숙제 완료!</b></p><ul><li>한 번에 맞힌 문제 ${r.f} / ${r.t}</li><li>다시 풀어 맞힌 문제 ${r.s||0}</li><li>별 <span class="mstars">${'★'.repeat(r.st||0)}${'☆'.repeat(3-(r.st||0))}</span></li><li>${CI} +${r.c+r.b}${r.b?` (연속 보너스 +${r.b} 포함)`:''}</li>${r.sec?`<li>걸린 시간 약 ${Math.max(1,Math.round(r.sec/60))}분</li>`:''}</ul>`;
   else if(st==='today'){
     const P=hasProg(k)?DB.prog:null,n=P?[...P.res].filter(c=>c!=='-').length:0;
     body=n?`<p><b>${n}문제까지 풀었어요.</b></p><button type="button" class="big" data-act="goToday">이어서 하러 가기</button>`:'<p>오늘 숙제를 아직 안 했어요.</p><button type="button" class="big" data-act="goToday">숙제하러 가기</button>';
@@ -1992,7 +2055,7 @@ function renderSheet(){
    <div class="srow"><span>효과음</span><button type="button" class="sw" data-act="sfx" aria-pressed="${PREF.sfx}">${PREF.sfx?'켜짐':'꺼짐'}</button></div>
    <div class="srow"><span>배경음</span><button type="button" class="sw" data-act="bgm" aria-pressed="${PREF.bgm}">${PREF.bgm?'켜짐':'꺼짐'}</button></div>
    ${themeGrid()}
-   <button type="button" class="big alt" data-act="changeGrade">학년 바꾸기 (지금 ${DB.grade||'-'}학년)</button>
+   <button type="button" class="big alt" data-act="changeGrade">학년 바꾸기 (지금 ${DB.grade?gname(DB.grade):'-'})</button>
    ${PROF.o.length>1?`<button type="button" class="big alt" data-act="toProfiles">프로필 바꾸기 (지금 ${esc(profName(PID))})</button>`:''}
    <p class="pnote sheetsync">${syncText()}</p>
    <button type="button" class="big" data-act="closeSheet">닫기</button>`;
@@ -2281,7 +2344,7 @@ function pStat(){
     <div class="ptiles mini"><div class="stat"><small>전체</small><b>${pr.length}번</b></div><div class="stat"><small>오늘</small><b>${pnT}번</b></div><div class="stat"><small>최근 7일</small><b>${pn7}번</b></div></div>
     ${pr.length?`${topU?`<h4 class="sub">자주 한 단원</h4><ul class="plist rec">${topU}</ul>`:''}<h4 class="sub">최근 연습</h4><ul class="plist rec">${prRecent}</ul>`:'<p class="pnote">아직 연습 기록이 없어요. 아이가 연습을 끝까지 풀면 어떤 단원을 몇 문제 풀었는지 여기에 쌓여요. (이 기능 이후의 연습부터 기록돼요)</p>'}</div>`;
   return `${tiles}\n  <div class="pgrid">
-  <div class="panelbox"><h3>지금 숙제 설정</h3><p class="pnote" style="margin:0">${g}학년 · ${curMonth()}월 진도: <b>${esc(PACE[g][plan.idx].t)}</b><br>난이도 <b>${LV_NAME[plan.lv]}</b>${li.auto?` (자동${li.rate==null?'':' · 최근 '+li.n+'일 한 번에 맞힘 '+Math.round(li.rate*100)+'%'})`:''} · 연산 ${plan.cnt.calc} · 사고력 ${plan.cnt.logic} · 도형/대수/확률 ${plan.cnt.other}</p></div>
+  <div class="panelbox"><h3>지금 숙제 설정</h3><p class="pnote" style="margin:0">${gname(g)} · ${curMonth()}월 진도: <b>${esc(PACE[g][plan.idx].t)}</b><br>난이도 <b>${LV_NAME[plan.lv]}</b>${li.auto?` (자동${li.rate==null?'':' · 최근 '+li.n+'일 한 번에 맞힘 '+Math.round(li.rate*100)+'%'})`:''} · 연산 ${plan.cnt.calc} · 사고력 ${plan.cnt.logic} · 도형/대수/확률 ${plan.cnt.other}</p></div>
   ${coinBox}${pracBox}
   ${chart}${weakBox}
   <div class="panelbox"><h3>영역별 한 번에 맞힘<small>단원별 최근 40문제 기준</small></h3>${catRows}</div>
@@ -2368,7 +2431,7 @@ document.addEventListener('click',e=>{
     else{setKid(t.dataset.pf);play('start');DB.grade?enterApp('today'):toGrades();}
   }
   else if(t.dataset.g){
-    DB.grade=+t.dataset.g;if(!DB.start)DB.start=todayKey();save();
+    DB.grade=t.dataset.g==='K'?'K':+t.dataset.g;if(!DB.start)DB.start=todayKey();if(DB.grade==='K'){const c=CFG.counts||{};if(c.calc===40&&c.logic===5&&c.other===5){CFG.counts={calc:20,logic:3,other:2};saveCfg();}}save();
     closeSheet();play('start');enterApp('today');
   }
   else if(t.dataset.unit){startUnit(t.dataset.unit);}
