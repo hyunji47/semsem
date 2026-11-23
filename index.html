@@ -718,6 +718,11 @@ html[data-th="t5"] body{background-color:#E3F8F8;background-image:radial-gradien
 .b14 span{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;line-height:14px;font-size:.68rem;margin-top:3px;white-space:nowrap}
 .b14 span small{font-size:.6rem;line-height:14px;height:14px;color:var(--soft);opacity:.8;overflow:visible;white-space:nowrap}
 .gK{--gc:var(--coral);--gt:var(--coral-t)}
+/* 부모화면 진입(여러 번 빠르게 탭) 시 더블탭 확대 방지 */
+html,body,button,a,input,select,label,.screen,.screen *{touch-action:manipulation}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+input,select,textarea{font-size:max(16px,1rem)}
+body{-webkit-tap-highlight-color:transparent}
 </style>
 
 <div class="wrap">
