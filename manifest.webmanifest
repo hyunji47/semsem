@@ -1,15 +1,9 @@
 {
  "name": "셈셈 수학 놀이터",
  "short_name": "셈셈",
- "id": "./",
- "start_url": "./",
+ "start_url": "./index.html",
  "scope": "./",
  "display": "standalone",
- "display_override": [
-  "standalone",
-  "fullscreen"
- ],
- "orientation": "any",
  "background_color": "#F2F8FF",
  "theme_color": "#F2F8FF",
  "lang": "ko",
