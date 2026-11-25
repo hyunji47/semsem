@@ -1353,7 +1353,7 @@ const DBK='semsem-v2',CFGK='semsem-cfg-v1',PREFK='semsem-pref-v1',PROFK='semsem-
 const lk=(base,pid)=>pid==='main'?base:base+':'+pid;
 const gname=g=>g==='K'?'예비 초1':g+'학년';
 const defaultDB=()=>({grade:0,start:'',earned:0,spent:0,hw:{},stars:{},ustat:{},goals:[],redeemed:[],prog:null,pracDay:{d:'',c:0},prac:[],t:0});
-const DB=defaultDB(),CFG=defaultCfg(),PREF={sfx:true,bgm:true,fs:false};
+const DB=defaultDB(),CFG=defaultCfg(),PREF={sfx:true,bgm:true,fs:null};
 const PROF={list:{main:{n:''}},o:['main'],t:0};
 let PID='main',KIDP='main',KIDCHOSEN=false;
 const MAXP=6;
@@ -2058,7 +2058,8 @@ function viewReward(){
 /* 전체 화면(브라우저 주소창 숨김) — 설치형 앱이 안 되는 기기용. 사용자 터치가 있어야 켤 수 있어요 */
 const fsOK=()=>!!(document.fullscreenEnabled&&document.documentElement.requestFullscreen)&&!matchMedia('(display-mode: standalone)').matches&&!matchMedia('(display-mode: fullscreen)').matches;
 const fsOn=()=>!!document.fullscreenElement;
-const fsRow=()=>fsOK()?`<div class="srow"><span>전체 화면</span><button type="button" class="sw" data-act="fs" aria-pressed="${fsOn()||PREF.fs}">${fsOn()?'켜짐':PREF.fs?'다음 터치부터':'꺼짐'}</button></div>`:'';
+const fsWant=()=>PREF.fs===null?(/Android/i.test(navigator.userAgent)&&matchMedia('(pointer:coarse)').matches):!!PREF.fs;
+const fsRow=()=>fsOK()?`<div class="srow"><span>전체 화면</span><button type="button" class="sw" data-act="fs" aria-pressed="${fsOn()||fsWant()}">${fsOn()?'켜짐':fsWant()?'다음 터치부터':'꺼짐'}</button></div>`:'';
 function fsToggle(){
   try{
     if(fsOn()){document.exitFullscreen();PREF.fs=false;}
@@ -2066,7 +2067,7 @@ function fsToggle(){
   }catch(e){}
   savePref();setTimeout(renderSheet,250);
 }
-document.addEventListener('pointerup',()=>{if(PREF.fs&&fsOK()&&!fsOn()){try{const p=document.documentElement.requestFullscreen({navigationUI:'hide'});if(p&&p.catch)p.catch(()=>{});}catch(e){}}},true);
+document.addEventListener('pointerup',()=>{if(fsWant()&&fsOK()&&!fsOn()){try{const p=document.documentElement.requestFullscreen({navigationUI:'hide'});if(p&&p.catch)p.catch(()=>{});}catch(e){}}},true);
 document.addEventListener('fullscreenchange',()=>{if(!$('#sheet').hidden)renderSheet();});
 function renderSheet(){
   $('#panel').innerHTML=`<h2>설정</h2>
