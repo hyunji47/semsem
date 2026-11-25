@@ -2056,10 +2056,12 @@ function viewReward(){
 
 /* ===== 설정 ===== */
 /* 전체 화면(브라우저 주소창 숨김) — 설치형 앱이 안 되는 기기용. 사용자 터치가 있어야 켤 수 있어요 */
-const fsOK=()=>!!(document.fullscreenEnabled&&document.documentElement.requestFullscreen)&&!matchMedia('(display-mode: standalone)').matches&&!matchMedia('(display-mode: fullscreen)').matches;
+const fsStand=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches;
+const fsCan=()=>!!(document.fullscreenEnabled&&document.documentElement.requestFullscreen);
+const fsOK=()=>fsCan()&&!fsStand();
 const fsOn=()=>!!document.fullscreenElement;
 const fsWant=()=>PREF.fs===null?(/Android/i.test(navigator.userAgent)&&matchMedia('(pointer:coarse)').matches):!!PREF.fs;
-const fsRow=()=>fsOK()?`<div class="srow"><span>전체 화면</span><button type="button" class="sw" data-act="fs" aria-pressed="${fsOn()||fsWant()}">${fsOn()?'켜짐':fsWant()?'다음 터치부터':'꺼짐'}</button></div>`:'';
+const fsRow=()=>fsStand()?'':fsCan()?`<div class="srow"><span>전체 화면</span><button type="button" class="sw" data-act="fs" aria-pressed="${fsOn()||fsWant()}">${fsOn()?'켜짐':fsWant()?'다음 터치부터':'꺼짐'}</button></div>`:`<div class="srow"><span>전체 화면</span><span class="pnote" style="margin:0">이 화면에서는 쓸 수 없어요. 브라우저에서 GitHub 주소로 열어 주세요.</span></div>`;
 function fsToggle(){
   try{
     if(fsOn()){document.exitFullscreen();PREF.fs=false;}
