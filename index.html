@@ -1591,6 +1591,8 @@ function ghCollect(){
 }
 const ghSig=o=>JSON.stringify({prof:o.prof,kids:o.kids});
 /* 받은 데이터 중 이 기기보다 새로운 것만 받아들인다. 바뀐 게 있으면 true */
+/* 아직 한 문제도 풀지 않은 빈 기록인지 (새 기기·데이터 삭제 직후) — 빈 기록이 기존 기록을 덮어쓰지 않게 한다 */
+const ghEmptyP=p=>!p||typeof p!=='object'||(!Object.keys(p.hw||{}).length&&!(p.prac||[]).length&&!(p.earned>0)&&!(p.spent>0)&&!(p.redeemed||[]).length);
 function ghApply(rem){
   let ch=false;
   if(!rem||rem.app!=='semsem')return false;
@@ -1603,7 +1605,7 @@ function ghApply(rem){
   PROF.o.forEach(id=>{
     const r=kids[id];if(!r)return;
     const lp=id===PID?DB:readJSON(lk(DBK,id)),lc=id===PID?CFG:readJSON(lk(CFGK,id));
-    if(r.p&&typeof r.p==='object'&&(r.p.t||0)>((lp&&lp.t)||0)){
+    if(r.p&&typeof r.p==='object'&&(((r.p.t||0)>((lp&&lp.t)||0)&&!(ghEmptyP(r.p)&&!ghEmptyP(lp)))||(ghEmptyP(lp)&&!ghEmptyP(r.p)))){
       if(id===PID){adoptProgress(r.p);try{localStorage.setItem(lk(DBK,id),JSON.stringify(DB));}catch(e){}}
       else{try{localStorage.setItem(lk(DBK,id),JSON.stringify(r.p));}catch(e){}}
       ch=true;
